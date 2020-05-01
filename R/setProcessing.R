@@ -13,7 +13,7 @@ correctFormula = function(formulaText) {
 }
 
 functionToData = function(exp) {
-  dataNames=c('sum','exp','loge','=','-','+','/','*','(','==','!=')
+  dataNames=c('sum','exp','loge','=','-','+','/','*','(','==','!=','<','>')
   if (length(exp) == 1) {
     return(exp)
   } else    if (!(as.character(exp[[1]]) %in% dataNames)) {

@@ -4,7 +4,6 @@
 # a function to formulas to update coefficients, a model matrix to allow for solution
 
 processTablo = function(tablo) {
-  tablo = 'd:/temp/gtap.tab'
   statements = tabloToStatements(tablo)
 
   gs = generateSets(Filter(function(f)
@@ -17,9 +16,29 @@ processTablo = function(tablo) {
     f$class == 'formula', statements))
 
   return(
-    setGenerator = gs,
-    coefficientGenerator = gc,
-    readGenerator = gr,
-    formulaGenerator = gf
+    list(
+      setGenerator = gs,
+      coefficientGenerator = gc,
+      readGenerator = gr,
+      formulaGenerator = gf
+    )
   )
 }
+
+pt = processTablo('d:/temp/gtap.tab')
+
+require(HARr)
+data=list(
+  GTAPSETS=read_har('C:\\Users\\MAROS.IVANIC\\Documents\\GTAP10\\sets.har'),
+  GTAPPARM=read_har('C:\\Users\\MAROS.IVANIC\\Documents\\GTAP10\\default.prm'),
+  GTAPDATA=read_har('C:\\Users\\MAROS.IVANIC\\Documents\\GTAP10\\basedata.har')
+)
+
+data=pt$setGenerator(data)
+data=pt$coefficientGenerator(data)
+data=pt$readGenerator(data)
+data=pt$formulaGenerator(data)
+
+data$VVA
+
+GTAPSETS=read_har('C:\\Users\\MAROS.IVANIC\\Documents\\GTAP10\\sets.har')
