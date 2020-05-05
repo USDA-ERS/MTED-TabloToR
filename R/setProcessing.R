@@ -79,7 +79,7 @@ generateSets = function(statements){
     preCommand[[3]][[3]] = removeFunctions(preCommand[[3]][[3]])
 
     #toRet[[deparse(preCommand[[2]])]] = eval(preCommand[[3]], toRet)
-    toRet[[length(toRet)+1]] = sprintf('%s=%s',deparse(preCommand[[2]]),deparse(command[[3]]))
+    toRet[[length(toRet)+1]] = sprintf('%s=%s',deparse(preCommand[[2]]),deparse(preCommand[[3]]))
     #eval(str2lang('SLUG[ENDW_COMM]'), toRet)
     #eval(quote(SLUG[ENDW_COMM]),toRet)
   }

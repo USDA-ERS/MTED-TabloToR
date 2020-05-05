@@ -14,13 +14,20 @@ processTablo = function(tablo) {
     f$class == 'read', statements))
   gf = generateFormulas(Filter(function(f)
     f$class == 'formula', statements))
+  gem = generateEquationCoefficientMatrix(Filter(function(f)
+    f$class == 'variable', statements), Filter(function(f)
+    f$class == 'equation', statements))
+  gec = generateEquationCoefficients(Filter(function(f)
+    f$class == 'equation', statements))
 
   return(
     list(
       setGenerator = gs,
       coefficientGenerator = gc,
       readGenerator = gr,
-      formulaGenerator = gf
+      formulaGenerator = gf,
+      equationCoefficientMatrixGenerator = gem,
+      equationCoefficientGenerator = gec
     )
   )
 }
@@ -38,6 +45,8 @@ data=pt$setGenerator(data)
 data=pt$coefficientGenerator(data)
 data=pt$readGenerator(data)
 data=pt$formulaGenerator(data)
+data=pt$equationCoefficientMatrixGenerator(data)
+data=pt$equationCoefficientGenerator(data)
 
 data$VVA
 

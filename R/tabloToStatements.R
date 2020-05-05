@@ -37,7 +37,7 @@ readFirstWord = function(statement){
   firstWord = ''
   for(i in 1:nchar(statement)){
     curLetter = substr(statement,i,i)
-    if(grepl('[A-Za-z]',curLetter)){
+    if(grepl('[A-Za-z0-9_]',curLetter)){
       firstWord = paste(firstWord,curLetter,sep='')
     } else {
       return(list(firstWord = firstWord, rest = trimws(substr(statement,i,nchar(statement)))))
@@ -65,6 +65,8 @@ cleanLine = function(line) {
 
   comment = trimws(comment)
   lineClean = trimws(lineClean)
+  lineClean=gsub('\\[','(',lineClean)
+  lineClean=gsub('\\]',')',lineClean)
   return(list(
     comment = comment,
     statement = lineClean
@@ -150,7 +152,14 @@ tabloToStatements = function(tablo){
 
 
   cleanLinesParsed = Map(function(f){
-    temp = generateParsedInput(f$command)
+    if(f$class=='equation'){
+      # Equations are recorded very differently from the rest of the objects in TABLO
+      getEquationName=readFirstWord(f$command)
+      temp =generateParsedInput(getEquationName$rest)
+      temp$equationName=getEquationName$firstWord
+    }else {
+      temp = generateParsedInput(f$command)
+    }
     f$parsed = temp
     return(f)
   },cleanLines)
