@@ -80,11 +80,16 @@ generateEquationCoefficientMatrix = function(variableStatements, equationStateme
   }
 
 
-  toRet[[length(toRet)+1]]=sprintf('eqcoeff = array(NA,dim=c(length(equations), length(variables)), dimnames=list(equations, variables))')
+  toRet[[length(toRet)+1]]=sprintf('eqcoeff = Matrix::sparseMatrix(i=c(),j=c(),x=as.numeric(c()),dim=c(length(equations), length(variables)), dimnames=list(equations, variables))')
 
   f = str2lang('function(data)return(data)')
   w = str2lang('within(data,{})')
+  c1=0
   for (tr in toRet) {
+    c1=c1+1
+    if(c1/5==round(c1/5)){
+      w[[3]][[length(w[[3]]) + 1]] = str2lang(sprintf('message("%s/%s")',c1, length(toRet)))
+    }
     w[[3]][[length(w[[3]]) + 1]] = str2lang(tr)
   }
 

@@ -127,19 +127,19 @@ generateEquationCoefficients = function(equationStatements) {
       expr = sprintf(
         "eqcoeff[%s,%s]= %s",
         sprintf(
-          "sprintf('%s[%s]',%s)",
+          ifelse(length(equationIndices)>0,"sprintf('%s[%s]',%s)",'"%s[%s]"'),
           equationName,
           paste(rep('\"%s\"', length(equationIndices)), collapse = ','),
           paste(unlist(equationIndices), collapse = ',')
         ),
         sprintf(
-          "sprintf('%s[%s]',%s)",
+          ifelse(length(v$indices)>0,"sprintf('%s[%s]',%s)",'"%s[%s]"'),
           deparse(v$varname),
           paste(rep('\"%s\"', length(v$indices)), collapse = ','),
           paste(unlist(v$indices), collapse = ',')
         ),
         #deparse(v$variable),
-        deparse(v$coefficient,width.cutoff = 500)
+        deparse(sumToMap(v$coefficient),width.cutoff = 500)
       )
       for (qualifier in c(qualifiers, v$qualifiers)) {
         q = str2lang(qualifier)

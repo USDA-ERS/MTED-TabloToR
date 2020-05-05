@@ -1,12 +1,7 @@
 generateReads = function(readStatements) {
   toRet = list()
   for (s in readStatements) {
-    if (grepl(".* from file .* header \"*\"",
-              s$command)) {
-      words = strsplit(s$command, " ")[[1]]
-
-      toRet[[length(toRet) + 1]] = sprintf('%s[] = %s$%s', words[1], words[4], gsub("\"", "", words[6]))
-    }
+    toRet[[length(toRet) + 1]] = processReadStatement(s)
   }
 
   f = str2lang('function(data)return(data)')

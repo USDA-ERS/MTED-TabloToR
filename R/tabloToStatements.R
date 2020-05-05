@@ -135,7 +135,7 @@ generateParsedInput = function(statement){
 tabloToStatements = function(tablo){
 
   #filename <- 'd:/temp/gtap.tab'
-  lines = fileToLines(filename)
+  lines = fileToLines(tablo)
 
   # Get a set of lines wiht comments out
   cleanLines = Map(cleanLine, lines)
