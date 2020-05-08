@@ -1,18 +1,8 @@
-generateSkeleton = function(statements) {
+generateVariables = function(statements) {
   toRet = list('"/" <- function(x,y) ifelse(y==0,0,base:::"/"(x,y))
 ')
   for (s in statements) {
-    if (s$class == 'set')
-      toRet[[length(toRet) + 1]] = processSetStatement(s)
-    else if (s$class == 'formula') {
-      toRet[[length(toRet) + 1]] = processFormulaStatement(s)
-    }
-    else if (s$class == 'coefficient') {
       toRet[[length(toRet) + 1]] = processCoefficientStatement(s)
-    }
-    else if (s$class == 'read') {
-      toRet[[length(toRet) + 1]] = processReadStatement(s)
-    }
   }
 
   f = str2lang('function(data)return(data)')

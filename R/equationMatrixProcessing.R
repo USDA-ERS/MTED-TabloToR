@@ -15,7 +15,8 @@ generateEquationCoefficientMatrix = function(variableStatements, equationStateme
 
     #Loop throuch each variable mentioned in this equation
     expr = sprintf(
-      "equations = c(equations, %s)",
+#      "equations = c(equations, %s)",
+      "%s",
       sprintf(
         ifelse(length(equationIndices)>0,"sprintf('%s[%s]',%s)","'%s[%s]'"),
         equationName,
@@ -28,13 +29,21 @@ generateEquationCoefficientMatrix = function(variableStatements, equationStateme
     for (qualifier in c(qualifiers)) {
       q = str2lang(qualifier)
       expr = sprintf(
-        'for(%s in %s){%s}',
+        #'for(%s in %s){%s}',
+        'Map(function(%s)%s,%s)',
         deparse(q[[2]], width.cutoff = 500),
-        deparse(q[[3]], width.cutoff = 500),
-        expr
+        expr,
+        deparse(q[[3]], width.cutoff = 500)
       )
     }
-    toRet[[length(toRet) + 1]] = expr
+    #toRet[[length(toRet) + 1]] = expr
+    if(length(qualifiers)==0){
+      toRet[[length(toRet) + 1]] = sprintf('equations = c(equations,%s)' ,expr)
+
+    }else{
+      toRet[[length(toRet) + 1]] = sprintf('equations = c(equations,unlist(do.call(c,%s)))' ,expr)
+
+    }
   }
 
 
@@ -57,7 +66,8 @@ generateEquationCoefficientMatrix = function(variableStatements, equationStateme
 
     #Loop throuch each variable mentioned in this equation
     expr = sprintf(
-      "variables = c(variables, %s)",
+#      "variables = c(variables, %s)",
+      "%s",
       sprintf(
         ifelse(length(variableIndices)>0,"sprintf('%s[%s]',%s)","'%s[%s]'"),
         variableName,
@@ -70,17 +80,33 @@ generateEquationCoefficientMatrix = function(variableStatements, equationStateme
     for (qualifier in c(qualifiers)) {
       q = str2lang(qualifier)
       expr = sprintf(
-        'for(%s in %s){%s}',
+#        'for(%s in %s){%s}',
+        'Map(function(%s)%s,%s)',
         deparse(q[[2]], width.cutoff = 500),
-        deparse(q[[3]], width.cutoff = 500),
-        expr
+        expr,
+        deparse(q[[3]], width.cutoff = 500)
       )
     }
-    toRet[[length(toRet) + 1]] = expr
+#    toRet[[length(toRet) + 1]] = expr
+    if(length(qualifiers)==0){
+      toRet[[length(toRet) + 1]] = sprintf('variables = c(variables,%s)' ,expr)
+
+    }else{
+      toRet[[length(toRet) + 1]] = sprintf('variables = c(variables,unlist(do.call(c,%s)))' ,expr)
+
+    }
   }
 
+  toRet[[length(toRet)+1]]='equations = unname(equations)'
+  toRet[[length(toRet)+1]]='variables = unname(variables)'
 
-  toRet[[length(toRet)+1]]=sprintf('eqcoeff = Matrix::sparseMatrix(i=c(),j=c(),x=as.numeric(c()),dim=c(length(equations), length(variables)), dimnames=list(equations, variables))')
+  toRet[[length(toRet)+1]]='equationNumbers = 1:length(equations)'
+  toRet[[length(toRet)+1]]='names(equationNumbers)=equations'
+
+  toRet[[length(toRet)+1]]='variableNumbers = 1:length(variables)'
+  toRet[[length(toRet)+1]]='names(variableNumbers)=variables'
+
+    #toRet[[length(toRet)+1]]=sprintf('eqcoeff = Matrix::sparseMatrix(i=c(),j=c(),x=as.numeric(c()),dim=c(length(equations), length(variables)), dimnames=list(equations, variables))')
 
   f = str2lang('function(data)return(data)')
   w = str2lang('within(data,{})')

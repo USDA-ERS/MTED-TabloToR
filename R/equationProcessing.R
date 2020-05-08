@@ -61,7 +61,7 @@ getVarCoef = function(expr,
     toRet[[length(toRet) + 1]] = getVarCoef(expr[[3]], sets, coefficient = coefficient)
   } else if (expr[[1]] == '-' & length(expr)==3) {
     toRet[[length(toRet) + 1]] = getVarCoef(expr[[2]], sets, coefficient = coefficient)
-    toRet[[length(toRet) + 1]] = getVarCoef(expr[[3]], sets, coefficient = coefficient)
+    toRet[[length(toRet) + 1]] = getVarCoef(expr[[3]], sets, coefficient = call('-',coefficient))
   } else if (expr[[1]] == '-' & length(expr)==2) {
     toRet[[length(toRet) + 1]] = getVarCoef(expr[[2]], sets, coefficient = call('-',coefficient))
   } else if (expr[[1]] == '*') {
@@ -92,7 +92,7 @@ unlistVarCoef = function(obj) {
 }
 
 generateEquationCoefficients = function(equationStatements) {
-  toRet = list()
+  toRet = list('equationMatrixList=list()')
   for (s in equationStatements) {
     # Get the formula for each variable
     frm = correctFormula(s$parsed$equation)
@@ -125,7 +125,8 @@ generateEquationCoefficients = function(equationStatements) {
     for (v in variables) {
       #Loop through the qualifiers (zeroth is the initial equation)
       expr = sprintf(
-        "eqcoeff[%s,%s]= %s",
+        #        "eqcoeff[%s,%s]= %s",
+        "list(list(equation=%s,variable = %s, expression= %s))",
         sprintf(
           ifelse(length(equationIndices)>0,"sprintf('%s[%s]',%s)",'"%s[%s]"'),
           equationName,
@@ -144,13 +145,15 @@ generateEquationCoefficients = function(equationStatements) {
       for (qualifier in c(qualifiers, v$qualifiers)) {
         q = str2lang(qualifier)
         expr = sprintf(
-          'for(%s in %s){%s}',
+          #          'for(%s in %s){%s}',
+          'unlist(Map(function(%s)%s,%s),recursive=F,use.names=F)',
           deparse(q[[2]], width.cutoff = 500),
-          deparse(q[[3]], width.cutoff = 500),
-          expr
+          expr,
+          deparse(q[[3]], width.cutoff = 500)
         )
       }
-      toRet[[length(toRet) + 1]] = expr
+      #toRet[[length(toRet) + 1]] = expr
+      toRet[[length(toRet) + 1]] = sprintf('equationMatrixList=c(equationMatrixList,%s)',expr)
     }
 
 
@@ -158,7 +161,10 @@ generateEquationCoefficients = function(equationStatements) {
 
   f = str2lang('function(data)return(data)')
   w = str2lang('within(data,{})')
+  c1=0
   for (tr in toRet) {
+    c1=c1+1
+    w[[3]][[length(w[[3]]) + 1]] = str2lang(sprintf("message(%s)",c1))
     w[[3]][[length(w[[3]]) + 1]] = str2lang(tr)
   }
 

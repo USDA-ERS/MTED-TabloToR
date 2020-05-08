@@ -30,6 +30,13 @@ processTablo = function(tablo) {
   gec = generateEquationCoefficients(Filter(function(f)
     f$class == 'equation', statements))
 
+  gev = generateVariables(Filter(function(f)
+    f$class == 'variable', statements))
+  geq = generateEquationLevels(Filter(function(f)
+    f$class == 'equation', statements))
+  gup = generateUpdates(Filter(function(f)
+    f$class %in% c('update','formula'), statements))
+
   return(
     list(
       # setGenerator = gs,
@@ -38,7 +45,20 @@ processTablo = function(tablo) {
       # formulaGenerator = gf,
       skeletonGenerator = generator,
       equationCoefficientMatrixGenerator = gem,
-      equationCoefficientGenerator = gec
+      equationCoefficientGenerator = gec,
+      changeVariables = unlist(Map(
+        function(f)
+          readFirstWord(f$parsed$equation)$firstWord,
+        Filter(
+          function(f)
+            '(change)' %in% f$parsed$element,
+          Filter(function(f)
+            f$class == 'variable', statements)
+        )
+      )),
+      generateEquationLevelValues = geq,
+      generateVariables = gev,
+      generateUpdates = gup
     )
   )
 }
