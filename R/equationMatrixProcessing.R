@@ -110,12 +110,12 @@ generateEquationCoefficientMatrix = function(variableStatements, equationStateme
 
   f = str2lang('function(data)return(data)')
   w = str2lang('within(data,{})')
-  c1=0
+#  c1=0
   for (tr in toRet) {
-    c1=c1+1
-    if(c1/5==round(c1/5)){
-      w[[3]][[length(w[[3]]) + 1]] = str2lang(sprintf('message("%s/%s")',c1, length(toRet)))
-    }
+    # c1=c1+1
+    # if(c1/10==round(c1/5)){
+    #   w[[3]][[length(w[[3]]) + 1]] = str2lang(sprintf('message("%s/%s")',c1, length(toRet)))
+    # }
     w[[3]][[length(w[[3]]) + 1]] = str2lang(tr)
   }
 

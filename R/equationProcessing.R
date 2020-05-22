@@ -161,10 +161,10 @@ generateEquationCoefficients = function(equationStatements) {
 
   f = str2lang('function(data)return(data)')
   w = str2lang('within(data,{})')
-  c1=0
+  #c1=0
   for (tr in toRet) {
-    c1=c1+1
-    w[[3]][[length(w[[3]]) + 1]] = str2lang(sprintf("message(%s)",c1))
+    #c1=c1+1
+#    w[[3]][[length(w[[3]]) + 1]] = str2lang(sprintf("message(%s)",c1))
     w[[3]][[length(w[[3]]) + 1]] = str2lang(tr)
   }
 

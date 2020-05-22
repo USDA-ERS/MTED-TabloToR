@@ -124,14 +124,117 @@ smallMatrix = data$eqcoeff[,excludedVariables]
 exogenous= array(0, dim=length(excludedVariables), dimnames=list(excludedVariables))
 #exogenous['tms["Machinery","LatinAmer","NAmerica"]']=0
 #exogenous['tms["AgInd","Usa","RestofWorld"]']=10
-#exogenous['pfactwld[]']=10
-exogenous['tms["Food","NAmerica","LatinAmer"]']=-5
+exogenous['pfactwld[]']=10
+#exogenous['tms["Food","NAmerica","LatinAmer"]']=-5
 
 
 
 tictoc::tic()
-solution = solve(bigMatrix,-smallMatrix %*% exogenous,sparse=T,tol=1e-20)
+solution = SparseM::solve(bigMatrix,(-smallMatrix %*% exogenous)[rownames(bigMatrix),],sparse=T,tol=1e-20)
 tictoc::toc()
+
+
+xx=-smallMatrix %*% exogenous
+
+
+dim(bigMatrix)
+dim(smallMatrix)
+length(exogenous)
+
+dim(bigMatrix)
+
+
+removeVariables = colnames(bigMatrix)[colSums(bigMatrix!=0)==1]
+
+
+
+
+length(removeVariables)
+
+cn=colnames(bigMatrix)
+
+removeVariableNumbers=which(cn %in% removeVariables)
+
+
+rn=rownames(bigMatrix)
+
+pb=txtProgressBar(min=0,max=length(bigMatrix2@i),style=3)
+removeEquationNumbers = Reduce(function(a,f){
+  setTxtProgressBar(pb,f)
+  if((bigMatrix2@j[f]+1) %in% removeVariableNumbers){
+    return=c(a,bigMatrix2@i[f]+1)
+  }
+} ,1:length(bigMatrix2@i),c())
+
+
+dim(bigMatrix)
+
+bigMatrix2 = as(bigMatrix, 'TsparseMatrix')
+tt=table(bigMatrix2@j)
+removeJ=bigMatrix2@j[which(bigMatrix2@j %in% as.numeric(names(tt)[tt==1]))]
+removeI=bigMatrix2@i[which(bigMatrix2@j %in% as.numeric(names(tt)[tt==1]))]
+
+unique(removeJ)
+unique(removeI)
+
+keepI=setdiff(1:dim(bigMatrix)[1] ,removeI+1)
+keepJ=setdiff(1:dim(bigMatrix)[1] ,removeJ+1)
+
+length(keepI)
+length(keepJ)
+
+bigMatrix=bigMatrix[keepI,keepJ]
+print(dim(bigMatrix))
+
+length(removeI)
+length(removeJ)
+
+yy = bigMatrix2@i[xx]+1
+
+length(unique(yy))
+length(removeVariableNumbers)
+
+pb=txtProgressBar(min=0,max=length(bigMatrix2@i),style=3)
+toRemove=c()
+for(f in 1:length(bigMatrix2@i)){
+  setTxtProgressBar(pb,f)
+  if(bigMatrix2@j[f] %in% removeVariableNumbers){
+    toRemove=c(toRemove,bigMatrix2@j[f])
+  }
+}
+
+
+removeEquations = Map(function(f){
+  which(as.vector(bigMatrix[,f])!=0)[1]
+  },removeVariableNumbers)
+
+n=2369
+m=231501-n
+
+
+matrixA=bigMatrix[1:n,1:n]
+matrixB=bigMatrix[1:n,(n+1):(n+m)]
+matrixC=bigMatrix[(n+1):(n+m),1:n]
+matrixD=bigMatrix[(n+1):(n+m),(n+1):(n+m)]
+
+
+vectorE=(-smallMatrix %*% exogenous)[1:n,1,drop=F]
+vectorF=(-smallMatrix %*% exogenous)[(n+1):(n+m)]
+
+vectorZ = solve(matrixA,vectorE,sparse=T,tol=1e-35)
+
+which(diag(bigMatrix)!=0)
+
+which(matrixA!=0)
+
+min(matrixA)
+class()
+class(xx)
+dim(xx)
+class(vectorE)
+class(matrixA)
+class(bigMatrix)
+det(bigMatrix)
 
 #solution['pm["AgInd","Usa"]']
 solution['pm["Food","NAmerica"]']
