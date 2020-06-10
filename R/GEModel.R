@@ -82,21 +82,45 @@ GEModel = setRefClass(
 
         smallMatrix = data$eqcoeff[, names(shocks)]
 
-        iterationSolution = SparseM::solve(bigMatrix,-smallMatrix %*% subShocks,
-                         sparse = T,
-                         tol = 1e-20)
+        ### Do backsolving first
+        bigMatrix2 = as(bigMatrix, 'TsparseMatrix')
+        tt=table(bigMatrix2@j)
+        removeJ=bigMatrix2@j[which(bigMatrix2@j %in% as.numeric(names(tt)[tt==1]))]
+        removeI=bigMatrix2@i[which(bigMatrix2@j %in% as.numeric(names(tt)[tt==1]))]
 
-        for (n in names(iterationSolution)) {
-          data = within(data, {
-            eval(str2lang(sprintf('%s = %f', n, iterationSolution[n])))
-          })
-        }
+        keepI=setdiff(1:dim(bigMatrix)[1] ,removeI+1)
+        keepJ=setdiff(1:dim(bigMatrix)[1] ,removeJ+1)
 
-        for (n in names(shocks)) {
-          data =  within(data, {
-            eval(str2lang(sprintf('%s = %f', n, shocks[n])))
-          })
-        }
+        backSolveMatrixLeft = bigMatrix[removeI+1,keepJ]
+        backSolveMatrixRight = bigMatrix[removeI+1,removeJ+1]
+        bigMatrixReduced=bigMatrix[keepI,keepJ]
+
+        exoVector=-smallMatrix %*% subShocks
+
+        exoVectorReduced = exoVector[keepI,,drop=F]
+
+        solutionReduced = SparseM::solve(bigMatrixReduced,exoVectorReduced,sparse=T,tol=1e-40)
+
+        solutionExtra = SparseM::solve(backSolveMatrixRight,-backSolveMatrixLeft%*%solutionReduced,sparse=T,tol=1e-40)
+
+        iterationSolution =c(solutionExtra,solutionReduced) [colnames(bigMatrix)]
+
+
+        # iterationSolution = SparseM::solve(bigMatrix,-smallMatrix %*% subShocks,
+        #                  sparse = T,
+        #                  tol = 1e-20)
+
+        # for (n in names(iterationSolution)) {
+        #   data = within(data, {
+        #     eval(str2lang(sprintf('%s = %f', n, iterationSolution[n])))
+        #   })
+        # }
+        #
+        # for (n in names(shocks)) {
+        #   data =  within(data, {
+        #     eval(str2lang(sprintf('%s = %f', n, shocks[n])))
+        #   })
+        # }
 
         if (length(solution)==0) {
           solution <<- c(iterationSolution, shocks)
@@ -106,6 +130,18 @@ GEModel = setRefClass(
           intermediateSolution = ifelse(names(c(iterationSolution, shocks)) %in% changeVariables, solution + c(iterationSolution, shocks), ((1 + solution / 100) * (1 + c(iterationSolution, shocks) / 100) - 1) * 100)
           names(intermediateSolution)=namesToUse
           solution<<-intermediateSolution
+        }
+
+        for (n in names(solution)) {
+          data = within(data, {
+            eval(str2lang(sprintf('%s = %f', n, solution[n])))
+          })
+        }
+
+        for (n in names(shocks)) {
+          data =  within(data, {
+            eval(str2lang(sprintf('%s = %f', n, shocks[n])))
+          })
         }
 
         data <<- generateUpdates(data)
