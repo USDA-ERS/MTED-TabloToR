@@ -4,3 +4,4 @@
 .Ruserdata
 tabloToR.Rproj
 .Rbuildignore
+*.rds
