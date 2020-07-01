@@ -5,4 +5,5 @@ A package that can interpret GEMPACK-style TABLO models in R and solve them
 ```R
 install.packages('devtools')
 devtools::install_git('https://github.com/USDA-ERS/MTED-TabloToR.git')
-require(tabloToR)```
+require(tabloToR)
+```
