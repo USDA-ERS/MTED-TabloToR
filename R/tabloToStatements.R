@@ -80,20 +80,33 @@ fileToLines = function(fileName){
   file = readChar(fileName, file.info(fileName)$size)
 
   inComment = F
+  strongComment = 0
   fileClean = ''
-  for (i in 1:nchar(file)) {
-    if (substr(file, i, i) == '!') {
+
+  i=1
+  while(i<=nchar(file)){
+    #for (i in 1:nchar(file)) {
+
+    if(substr(file,i,i+3)=='![[!' & !inComment){
+      strongComment = strongComment + 1
+      i = i + 4
+    } else if (substr(file,i,i+3)=='!]]!' & !inComment){
+      strongComment = strongComment - 1
+      i = i + 4
+    } else if (substr(file, i, i) == '!' & strongComment==0) {
       inComment = !inComment
-    } else if (!inComment) {
+    } else if (!inComment & strongComment==0) {
       if (!is.element(substr(file, i, i) , c('\r', '\n'))) {
         fileClean = paste(fileClean, substr(file, i, i), sep = '')
       }
     }
+    i=i+1
   }
 
   return(strsplit(fileClean, ';', fixed = T)[[1]])
 
 }
+
 
 generateParsedInput = function(statement){
   # Pattern ()()expression
