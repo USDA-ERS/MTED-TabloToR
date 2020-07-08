@@ -106,7 +106,7 @@ GEModel = setRefClass(
 
       names(subShocks)=names(shocks)
 
-      message(subShocks[subShocks!=0])
+      #message(subShocks[subShocks!=0])
 
       solution <<- as.numeric(c())
 
@@ -184,8 +184,8 @@ GEModel = setRefClass(
         #     eval(str2lang(sprintf('%s = %f', n, shocks[n])))
         #   })
         # }
-        message(iterationSolution['qgdp["omn"]'])
-        message(shocks[shocks!=0])
+        #message(iterationSolution['qgdp["omn"]'])
+        #message(shocks[shocks!=0])
 
         if (length(solution)==0) {
           solution <<- c(iterationSolution, shocks)
