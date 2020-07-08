@@ -30,7 +30,9 @@ GEModel = setRefClass(
       equationCoefficientGenerator <<- results$equationCoefficientGenerator
       generateVariables <<- results$generateVariables
       generateUpdates <<- results$generateUpdates
+      if(!is.null(results$changeVariables)){
       basicChangeVariables <<- results$changeVariables
+      }
     },
     loadData = function(inputData) {
       data <<- skeletonGenerator(inputData)
@@ -41,8 +43,70 @@ GEModel = setRefClass(
     setShocks = function(shocks) {
       shocks <<- shocks
     },
-    solveModel = function(iter = 3) {
+    generateSolution = function(subShocks){
+      iNames = unlist(Map(function(i)
+        i$equation, data$equationMatrixList))
+      iNumbers = data$equationNumbers[iNames]
+      jNames = unlist(Map(function(i)
+        i$variable, data$equationMatrixList))
+      jNumbers = data$variableNumbers[jNames]
+      xValues = unlist(Map(
+        function(i)
+          ifelse(
+            substr(i$variable, 1, regexpr('\\[', i$variable) - 1) %in% changeVariables,
+            0.01,
+            1
+          ) * i$expression,
+        data$equationMatrixList
+      ))
+
+      data$eqcoeff = sparseMatrix(
+        i = iNumbers,
+        j = jNumbers,
+        x = xValues,
+        dims = c(length(data$equations), length(data$variables)),
+        dimnames = list(
+          equations = data$equations,
+          variables = data$variables
+        )
+      )
+
+
+      bigMatrix = data$eqcoeff[, setdiff(colnames(data$eqcoeff), names(shocks))]
+
+      smallMatrix = data$eqcoeff[, names(shocks)]
+
+      ### Do backsolving first
+      bigMatrix2 = as(bigMatrix, 'TsparseMatrix')
+      tt=table(bigMatrix2@j)
+      removeJ=bigMatrix2@j[which(bigMatrix2@j %in% as.numeric(names(tt)[tt==1]))]
+      removeI=bigMatrix2@i[which(bigMatrix2@j %in% as.numeric(names(tt)[tt==1]))]
+
+      keepI=setdiff(1:dim(bigMatrix)[1] ,removeI+1)
+      keepJ=setdiff(1:dim(bigMatrix)[1] ,removeJ+1)
+
+      backSolveMatrixLeft = bigMatrix[removeI+1,keepJ]
+      backSolveMatrixRight = bigMatrix[removeI+1,removeJ+1]
+      bigMatrixReduced=bigMatrix[keepI,keepJ]
+
+      exoVector=-smallMatrix %*% subShocks
+
+      exoVectorReduced = exoVector[keepI,,drop=F]
+
+      solutionReduced = SparseM::solve(bigMatrixReduced,exoVectorReduced,sparse=T,tol=1e-40)
+
+      solutionExtra = SparseM::solve(backSolveMatrixRight,-backSolveMatrixLeft%*%solutionReduced,sparse=T,tol=1e-40)
+
+      iterationSolution =c(solutionExtra,solutionReduced) [colnames(bigMatrix)]
+
+      return(iterationSolution)
+    },
+    solveModel = function(iter = 3, type='linear') {
       subShocks = ifelse(names(shocks) %in% changeVariables, shocks/iter, 100 * (exp(log(1 + shocks / 100) / iter) - 1))
+
+      names(subShocks)=names(shocks)
+
+      message(subShocks[subShocks!=0])
 
       solution <<- as.numeric(c())
 
@@ -50,61 +114,60 @@ GEModel = setRefClass(
         message(sprintf('Iteration %s', it))
         data <<- equationCoefficientGenerator(data)
 
-        iNames = unlist(Map(function(i)
-          i$equation, data$equationMatrixList))
-        iNumbers = data$equationNumbers[iNames]
-        jNames = unlist(Map(function(i)
-          i$variable, data$equationMatrixList))
-        jNumbers = data$variableNumbers[jNames]
-        xValues = unlist(Map(
-          function(i)
-            ifelse(
-              substr(i$variable, 1, regexpr('\\[', i$variable) - 1) %in% changeVariables,
-              0.01,
-              1
-            ) * i$expression,
-          data$equationMatrixList
-        ))
+        if(type =='linear'){
+          iterationSolution = generateSolution(subShocks)
+        }else if (type=='quadratic'){
+          message('A')
+          iterationSolution1 = generateSolution(subShocks*0.001)
+          oldData <<- data
+          message('B')
 
-        data$eqcoeff = sparseMatrix(
-          i = iNumbers,
-          j = jNumbers,
-          x = xValues,
-          dims = c(length(data$equations), length(data$variables)),
-          dimnames = list(
-            equations = data$equations,
-            variables = data$variables
-          )
-        )
+          tempSolution <<- as.numeric(c())
+          names(subShocks)=names(shocks)
+
+          if (length(tempSolution)==0) {
+            tempSolution <<- c(iterationSolution1, subShocks*0.001)
+          } else{
+
+            namesToUse = names(tempSolution)
+            intermediateSolution = ifelse(names(c(iterationSolution1, subShocks)) %in% changeVariables, tempSolution + c(iterationSolution1, subShocks*0.001), ((1 + tempSolution / 100) * (1 + c(iterationSolution1, subShocks*0.001) / 100) - 1) * 100)
+            names(intermediateSolution1)=namesToUse
+            tempSolution<<-intermediateSolution
+          }
+
+          gTempSolution <<- tempSolution
+          gSubShocks <<- subShocks
+
+          for (n in names(tempSolution)) {
+            data <<- within(data, {
+              eval(str2lang(sprintf('%s = %f', n, tempSolution[n])))
+            })
+          }
+
+          for (n in names(subShocks)) {
+            data <<-  within(data, {
+              eval(str2lang(sprintf('%s = %f', n, subShocks[n]*0.001)))
+            })
+          }
 
 
-        bigMatrix = data$eqcoeff[, setdiff(colnames(data$eqcoeff), names(shocks))]
 
-        smallMatrix = data$eqcoeff[, names(shocks)]
+          data <<- generateUpdates(data)
+          data <<- equationCoefficientGenerator(data)
 
-        ### Do backsolving first
-        bigMatrix2 = as(bigMatrix, 'TsparseMatrix')
-        tt=table(bigMatrix2@j)
-        removeJ=bigMatrix2@j[which(bigMatrix2@j %in% as.numeric(names(tt)[tt==1]))]
-        removeI=bigMatrix2@i[which(bigMatrix2@j %in% as.numeric(names(tt)[tt==1]))]
+          newData<<-data
+          iterationSolution2 = generateSolution(subShocks*0.001)
+          message('C')
 
-        keepI=setdiff(1:dim(bigMatrix)[1] ,removeI+1)
-        keepJ=setdiff(1:dim(bigMatrix)[1] ,removeJ+1)
+          data <<- oldData
+          changeIterationSolution = (iterationSolution1-iterationSolution2)/0.001
 
-        backSolveMatrixLeft = bigMatrix[removeI+1,keepJ]
-        backSolveMatrixRight = bigMatrix[removeI+1,removeJ+1]
-        bigMatrixReduced=bigMatrix[keepI,keepJ]
+          gIterationSolution1<<-iterationSolution1
+          gIterationSolution2<<-iterationSolution2
+          gChangeIterationSolution <<- changeIterationSolution
 
-        exoVector=-smallMatrix %*% subShocks
-
-        exoVectorReduced = exoVector[keepI,,drop=F]
-
-        solutionReduced = SparseM::solve(bigMatrixReduced,exoVectorReduced,sparse=T,tol=1e-40)
-
-        solutionExtra = SparseM::solve(backSolveMatrixRight,-backSolveMatrixLeft%*%solutionReduced,sparse=T,tol=1e-40)
-
-        iterationSolution =c(solutionExtra,solutionReduced) [colnames(bigMatrix)]
-
+          iterationSolution = iterationSolution1 / 0.001 + 1/2 * changeIterationSolution/0.001 * 1^2
+        }
 
         # iterationSolution = SparseM::solve(bigMatrix,-smallMatrix %*% subShocks,
         #                  sparse = T,
@@ -121,6 +184,8 @@ GEModel = setRefClass(
         #     eval(str2lang(sprintf('%s = %f', n, shocks[n])))
         #   })
         # }
+        message(iterationSolution['qgdp["omn"]'])
+        message(shocks[shocks!=0])
 
         if (length(solution)==0) {
           solution <<- c(iterationSolution, shocks)
@@ -133,21 +198,33 @@ GEModel = setRefClass(
         }
 
         for (n in names(solution)) {
-          data = within(data, {
-            eval(str2lang(sprintf('%s = %f', n, solution[n])))
+          data <<- within(data, {
+            #eval(str2lang(sprintf('%s = %f', n, solution[n])))
+            eval(str2lang(sprintf('%s = %f', n, iterationSolution[n])))
           })
         }
 
         for (n in names(shocks)) {
-          data =  within(data, {
-            eval(str2lang(sprintf('%s = %f', n, shocks[n])))
+          data <<-  within(data, {
+            #            eval(str2lang(sprintf('%s = %f', n, shocks[n])))
+                        eval(str2lang(sprintf('%s = %f', n, subShocks[n])))
           })
         }
 
         data <<- generateUpdates(data)
-
-
       }
+      for (n in names(solution)) {
+        data <<- within(data, {
+          eval(str2lang(sprintf('%s = %f', n, solution[n])))
+        })
+      }
+
+      for (n in names(shocks)) {
+        data <<-  within(data, {
+          eval(str2lang(sprintf('%s = %f', n, shocks[n])))
+        })
+      }
+
     }
   )
 )
