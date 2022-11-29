@@ -1,4 +1,5 @@
 generateEquationCoefficientMatrix = function(variableStatements, equationStatements) {
+  #browser()
   toRet = list('equations=c()','variables=c()')
   for (s in equationStatements) {
     # Get the formula for each variable
@@ -13,27 +14,43 @@ generateEquationCoefficientMatrix = function(variableStatements, equationStateme
     equationIndices=Map(function(f)str2lang(f)[[2]],qualifiers)
 
 
-    #Loop throuch each variable mentioned in this equation
-    expr = sprintf(
-#      "equations = c(equations, %s)",
-      "%s",
-      sprintf(
-        ifelse(length(equationIndices)>0,"sprintf('%s[%s]',%s)","'%s[%s]'"),
-        equationName,
-        paste(rep('\"%s\"', length(
-          equationIndices
-        )), collapse = ','),
-        paste(unlist(equationIndices), collapse = ',')
+    #Loop through each variable mentioned in this equation
+#     expr = sprintf(
+# #      "equations = c(equations, %s)",
+#       "%s",
+#       sprintf(
+#         ifelse(length(equationIndices)>0,"sprintf('%s[%s]',%s)","'%s[%s]'"),
+#         equationName,
+#         paste(rep('\"%s\"', length(
+#           equationIndices
+#         )), collapse = ','),
+#         paste(unlist(equationIndices), collapse = ',')
+#       )
+#     )
+
+    if(length(equationIndices)>0){
+      expr = sprintf("sprintf('%s[%s]',%s)",equationName,
+              paste(rep('\"%s\"', length(
+                equationIndices
+              )), collapse = ','),
+              paste(unlist(equationIndices), collapse = ','))
+
+    } else {
+      expr = sprintf("'%s[%s]'",equationName,
+              equationName
       )
-    )
+    }
+
+
+
     for (qualifier in c(qualifiers)) {
       q = str2lang(qualifier)
       expr = sprintf(
         #'for(%s in %s){%s}',
         'Map(function(%s)%s,%s)',
-        deparse(q[[2]], width.cutoff = 500),
+        deparse1(q[[2]]),
         expr,
-        deparse(q[[3]], width.cutoff = 500)
+        deparse1(q[[3]])
       )
     }
     #toRet[[length(toRet) + 1]] = expr
@@ -58,33 +75,53 @@ generateEquationCoefficientMatrix = function(variableStatements, equationStateme
     variableDefinition = correctFormula(s$parsed$equation)
 
     if(length(variableDefinition)==1){
-      variableName=deparse(variableDefinition)
+      variableName=deparse1(variableDefinition)
     } else {
-      variableName=deparse(variableDefinition[[2]])
+      variableName=deparse1(variableDefinition[[2]])
     }
     variableIndices=Map(function(f)str2lang(f)[[2]],qualifiers)
 
     #Loop throuch each variable mentioned in this equation
-    expr = sprintf(
-#      "variables = c(variables, %s)",
-      "%s",
-      sprintf(
-        ifelse(length(variableIndices)>0,"sprintf('%s[%s]',%s)","'%s[%s]'"),
+#     expr = sprintf(
+# #      "variables = c(variables, %s)",
+#       "%s",
+#       sprintf(
+#         ifelse(length(variableIndices)>0,"sprintf('%s[%s]',%s)","'%s[%s]'"),
+#         variableName,
+#         paste(rep('\"%s\"', length(
+#           variableIndices
+#         )), collapse = ','),
+#         paste(unlist(variableIndices), collapse = ',')
+#       )
+#     )
+
+    if(length(variableIndices)>0){
+      expr = sprintf(
+        "sprintf('%s[%s]',%s)",
         variableName,
         paste(rep('\"%s\"', length(
           variableIndices
         )), collapse = ','),
         paste(unlist(variableIndices), collapse = ',')
       )
-    )
+    } else {
+      expr = sprintf(
+        "'%s[%s]'",
+        variableName,
+        paste(rep('\"%s\"', length(
+          variableIndices
+        )), collapse = ',')
+      )
+    }
+
     for (qualifier in c(qualifiers)) {
       q = str2lang(qualifier)
       expr = sprintf(
 #        'for(%s in %s){%s}',
         'Map(function(%s)%s,%s)',
-        deparse(q[[2]], width.cutoff = 500),
+        deparse1(q[[2]]),
         expr,
-        deparse(q[[3]], width.cutoff = 500)
+        deparse1(q[[3]])
       )
     }
 #    toRet[[length(toRet) + 1]] = expr

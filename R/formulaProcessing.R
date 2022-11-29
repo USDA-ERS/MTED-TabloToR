@@ -13,9 +13,9 @@ sumToMap = function(expr) {
     expr[[3]] = NULL
     expr[[2]][[2]] = str2lang(sprintf(
       'Map(function(%s)%s,%s)',
-      deparse(index),
-      deparse(sumToMap(expression), width.cutoff = 500),
-      deparse(set)
+      deparse1(index),
+      paste0(deparse1(sumToMap(expression)),collapse=' '),
+      deparse1(set)
     ))
 
   }else  if (length(expr) > 1) {

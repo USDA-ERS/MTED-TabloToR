@@ -108,7 +108,7 @@ generateEquationCoefficients = function(equationStatements) {
         variables[[v]]$varname = variables[[v]]$variable[[2]]
       }
       variables[[v]]$qualifiers = Map(function(f)
-        sprintf('all(%s,%s)', deparse(f$index), deparse(f$set)),
+        sprintf('all(%s,%s)', deparse(f$index), deparse1(f$set)),
         variables[[v]]$sets)
     }
 
@@ -127,29 +127,57 @@ generateEquationCoefficients = function(equationStatements) {
       expr = sprintf(
         #        "eqcoeff[%s,%s]= %s",
         "list(list(equation=%s,variable = %s, expression= %s))",
-        sprintf(
-          ifelse(length(equationIndices)>0,"sprintf('%s[%s]',%s)",'"%s[%s]"'),
+
+
+        # sprintf(
+        #   ifelse(length(equationIndices)>0,"sprintf('%s[%s]',%s)",'"%s[%s]"'),
+        #   equationName,
+        #   paste(rep('\"%s\"', length(equationIndices)), collapse = ','),
+        #   paste(unlist(equationIndices), collapse = ',')
+        # ),
+
+        ifelse(length(equationIndices)>0,sprintf(
+          "sprintf('%s[%s]',%s)",
           equationName,
           paste(rep('\"%s\"', length(equationIndices)), collapse = ','),
           paste(unlist(equationIndices), collapse = ',')
-        ),
-        sprintf(
-          ifelse(length(v$indices)>0,"sprintf('%s[%s]',%s)",'"%s[%s]"'),
-          deparse(v$varname),
-          paste(rep('\"%s\"', length(v$indices)), collapse = ','),
-          paste(unlist(v$indices), collapse = ',')
+        ),sprintf(
+          '"%s[%s]"',
+          equationName,
+          paste(rep('\"%s\"', length(equationIndices)), collapse = ',')
+        )),
+
+        # sprintf(
+        #   ifelse(length(v$indices)>0,"sprintf('%s[%s]',%s)",'"%s[%s]"'),
+        #   deparse1(v$varname),
+        #   paste(rep('\"%s\"', length(v$indices)), collapse = ','),
+        #   paste(unlist(v$indices), collapse = ',')
+        # ),
+        ifelse(
+          length(v$indices) > 0,
+          sprintf(
+            "sprintf('%s[%s]',%s)",
+            deparse1(v$varname),
+            paste(rep('\"%s\"', length(v$indices)), collapse = ','),
+            paste(unlist(v$indices), collapse = ',')
+          ),
+          sprintf(
+            '"%s[%s]"',
+            deparse1(v$varname),
+            paste(rep('\"%s\"', length(v$indices)), collapse = ',')
+          )
         ),
         #deparse(v$variable),
-        deparse(sumToMap(v$coefficient),width.cutoff = 500)
+        deparse1(sumToMap(v$coefficient))
       )
       for (qualifier in c(qualifiers, v$qualifiers)) {
         q = str2lang(qualifier)
         expr = sprintf(
           #          'for(%s in %s){%s}',
           'unlist(Map(function(%s)%s,%s),recursive=F,use.names=F)',
-          deparse(q[[2]], width.cutoff = 500),
+          deparse1(q[[2]]),
           expr,
-          deparse(q[[3]], width.cutoff = 500)
+          deparse1(q[[3]])
         )
       }
       #toRet[[length(toRet) + 1]] = expr

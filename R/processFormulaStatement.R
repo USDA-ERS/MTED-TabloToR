@@ -1,5 +1,6 @@
 processFormulaStatement = function(s){
   frm = correctFormula(s$parsed$equation)
+  #frm = correctFormula(gsub(":","%:%",gsub('>==','>=',gsub('<==','<=',gsub('=','=',s$parsed$equation)))))
 
   dimensions = s$parsed$elements[grep('\\(all,', s$parsed$elements)]
   qualifiers = gsub('<>', '!=', gsub(':', ",", gsub(
@@ -11,7 +12,7 @@ processFormulaStatement = function(s){
     for (l in 1:length(qualifiers)) {
       q = str2lang(qualifiers[[l]])
       if (length(q) == 4) {
-        condition[[length(condition) + 1]] = deparse(correctFormula(deparse(q[[4]])), width.cutoff = 500)
+        condition[[length(condition) + 1]] = paste0(deparse1(correctFormula(deparse1(q[[4]]))),collapse=' ')
       }
     }
 
@@ -20,29 +21,29 @@ processFormulaStatement = function(s){
       if (l == 1) {
         expr = sprintf(
           'for(%s in %s){%s}',
-          deparse(q[[2]]),
-          deparse(q[[3]]),
+          paste0(deparse1(q[[2]]),collapse=' '),
+          paste0(deparse1(q[[3]]),collapse=' '),
           ifelse(
             length(condition) == 0,
-            deparse(frm, width.cutoff = 500),
+            paste0(deparse1(frm),collapse=' '),
             sprintf(
               'if(%s){%s}',
               paste(condition, collapse = '&'),
-              deparse(frm, width.cutoff = 500)
+              paste0(deparse1(frm), collapse=' ')
             )
           )
         )
       } else {
         expr = sprintf(
           'for(%s in %s){%s}',
-          deparse(q[[2]], width.cutoff = 500),
-          deparse(q[[3]], width.cutoff = 500),
+          paste0(deparse1(q[[2]]),collapse=' '),
+                 paste0(deparse1(q[[3]]),collapse=' '),
           expr
         )
       }
     }
   } else{
-    expr = deparse(frm, width.cutoff = 500)
+    expr = paste0(deparse1(frm),collapse=' ')
   }
-  return(deparse(sumToMap(str2lang(expr)), width.cutoff = 500))
+  return(paste0(deparse1(sumToMap(str2lang(expr))),collapse=' '))
 }

@@ -35,6 +35,7 @@ GEModel = setRefClass(
       }
     },
     loadData = function(inputData) {
+      #browser()
       data <<- skeletonGenerator(inputData)
       data <<- equationCoefficientMatrixGenerator(data)
       data <<- generateVariables(data)

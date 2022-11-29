@@ -34,16 +34,49 @@ breakLine <- function(line, definitions) {
 
 }
 readFirstWord = function(statement){
-  firstWord = ''
-  for(i in 1:nchar(statement)){
-    curLetter = substr(statement,i,i)
-    if(grepl('[A-Za-z0-9_]',curLetter)){
-      firstWord = paste(firstWord,curLetter,sep='')
-    } else {
-      return(list(firstWord = firstWord, rest = trimws(substr(statement,i,nchar(statement)))))
-    }
+
+  statement = trimws(statement)
+
+  if(grepl("^equation",statement, ignore.case = TRUE)){
+    firstWord = "equation"
+  } else if(grepl("^variable",statement, ignore.case = TRUE)){
+    firstWord = "variable"
+  } else if(grepl("^read",statement, ignore.case = TRUE)){
+    firstWord = "read"
+  } else if(grepl("^write",statement, ignore.case = TRUE)){
+    firstWord = "write"
+  } else if(grepl("^file",statement, ignore.case = TRUE)){
+    firstWord = "file"
+  } else if(grepl("^assertion",statement, ignore.case = TRUE)){
+    firstWord = "assertion"
+  } else if(grepl("^set",statement, ignore.case = TRUE)){
+    firstWord = "set"
+  } else if(grepl("^subset",statement, ignore.case = TRUE)){
+    firstWord = "subset"
+  } else if(grepl("^coefficient",statement, ignore.case = TRUE)){
+    firstWord = "coefficient"
+  } else if(grepl("^update",statement, ignore.case = TRUE)){
+    firstWord = "update"
+  } else if(grepl("^formula",statement, ignore.case = TRUE)){
+    firstWord = "formula"
+  } else if(grepl("^zerodivide",statement, ignore.case = TRUE)){
+    firstWord = "zerodivide"
+  } else {
+    firstWord = ""
   }
-  return(list(firstWord = firstWord, rest = trimws(substr(statement,i,nchar(statement)))))
+
+  return(list(firstWord = firstWord, rest = trimws(substr(statement,nchar(firstWord)+1,nchar(statement)))))
+}
+
+readEquationName = function(statement){
+
+  statement = trimws(statement)
+
+  findName = gregexpr('^[a-z]{1,}[a-z0-9_]{1,}', statement, ignore.case = TRUE)[[1]]
+
+  firstWord = substr(statement, findName, attributes(findName)$match.length)
+
+  return(list(firstWord = firstWord, rest = trimws(substr(statement,attributes(findName)$match.length+1,nchar(statement)))))
 }
 cleanLine = function(line) {
   inComment = F
@@ -67,6 +100,9 @@ cleanLine = function(line) {
   lineClean = trimws(lineClean)
   lineClean=gsub('\\[','(',lineClean)
   lineClean=gsub('\\]',')',lineClean)
+  lineClean=gsub('\\{','(',lineClean)
+  lineClean=gsub('\\}',')',lineClean)
+  lineClean=gsub('\\bif\\b','IF',lineClean)
   return(list(
     comment = comment,
     statement = lineClean
@@ -75,38 +111,112 @@ cleanLine = function(line) {
 
 
 # Take a file name, read the file, remove comments and return a vector of tablo lines
-fileToLines = function(fileName){
+fileToLines = function(fileName) {
+  file = tolower(readChar(fileName, file.info(fileName)$size))
 
-  file = readChar(fileName, file.info(fileName)$size)
 
-  inComment = F
-  strongComment = 0
-  fileClean = ''
+  beginStrongComment = gregexpr("!\\[\\[!", file, )[[1]]
+  endStrongComment = gregexpr("!\\]\\]!", file, )[[1]]
+  if (beginStrongComment[1] > 0) {
+    strongCommentDepth = unlist(Map(
+      function(f)
+        sum(beginStrongComment < f) - sum(endStrongComment <= f) ,
+      endStrongComment
+    ))
 
-  i=1
-  while(i<=nchar(file)){
-    #for (i in 1:nchar(file)) {
+    beginStrongComment = beginStrongComment[strongCommentDepth == 0]
+    endStrongComment = endStrongComment[strongCommentDepth == 0]
 
-    if(substr(file,i,i+3)=='![[!' & !inComment){
-      strongComment = strongComment + 1
-      i = i + 4
-    } else if (substr(file,i,i+3)=='!]]!' & !inComment){
-      strongComment = strongComment - 1
-      i = i + 4
-    } else if (substr(file, i, i) == '!' & strongComment==0) {
-      inComment = !inComment
-    } else if (!inComment & strongComment==0) {
-      if (!is.element(substr(file, i, i) , c('\r', '\n'))) {
-        fileClean = paste(fileClean, substr(file, i, i), sep = '')
+    fileClean = substr(file, 1, beginStrongComment[1] - 1)
+
+    for (nn in 1:length(endStrongComment)) {
+      if (nn < length(endStrongComment)) {
+        fileClean = paste0(fileClean,
+                           substr(file, endStrongComment[nn] + 5, beginStrongComment[nn + 1] - 1))
+      } else {
+        fileClean = paste0(fileClean, substr(file, endStrongComment[nn] + 5, nchar(file)))
       }
     }
-    i=i+1
+  } else{
+    fileClean = file
   }
 
-  return(strsplit(fileClean, ';', fixed = T)[[1]])
+
+  comments = gregexpr("!", fileClean, )[[1]]
+
+
+  if (comments[1] > 0) {
+    beginComment = comments[c(TRUE, FALSE)]
+    endComment = comments[c(FALSE, TRUE)]
+
+
+    fileClean2 = substr(fileClean, 1, beginComment[1] - 1)
+
+    for (nn in 1:length(beginComment)) {
+      if (nn < length(beginComment)) {
+        fileClean2 = paste0(fileClean2,
+                            substr(fileClean, endComment[nn] + 1, beginComment[nn + 1] - 1))
+      } else {
+        fileClean2 = paste0(fileClean2, substr(fileClean, endComment[nn] + 1, nchar(fileClean)))
+      }
+
+    }
+  } else{
+    fileClean2 = fileClean
+  }
+
+  smallComment = gregexpr("#", fileClean2, )[[1]]
+
+
+  beginSmallComment = smallComment[c(TRUE,FALSE)]
+  endSmallComment = smallComment[c(FALSE, TRUE)]
+
+
+  exclamations = gregexpr(";", fileClean2, )[[1]]
+
+  breakLine = Filter(function(f){
+      !any(f>beginSmallComment & f<endSmallComment)
+  }, exclamations)
+
+
+  lineBeginnings = c(1,breakLine+1)
+  lineEnds = c(breakLine-1, nchar(fileClean2))
+
+  toReturn = unlist(Map(function(f){
+    trimws(gsub("\\n","",gsub("\\r","",substr(fileClean2, lineBeginnings[f], lineEnds[f]))))
+  }, 1:length(lineBeginnings)))
+
+  return(toReturn[nchar(toReturn)>0])
+
+  # fileClean2
+  #
+  # inComment = F
+  # strongComment = 0
+  # fileClean = ''
+  #
+  # i=1
+  # while(i<=nchar(file)){
+  #   #for (i in 1:nchar(file)) {
+  #
+  #   if(substr(file,i,i+3)=='![[!' & !inComment){
+  #     strongComment = strongComment + 1
+  #     i = i + 4
+  #   } else if (substr(file,i,i+3)=='!]]!' & !inComment){
+  #     strongComment = strongComment - 1
+  #     i = i + 4
+  #   } else if (substr(file, i, i) == '!' & strongComment==0) {
+  #     inComment = !inComment
+  #   } else if (!inComment & strongComment==0) {
+  #     if (!is.element(substr(file, i, i) , c('\r', '\n'))) {
+  #       fileClean = paste(fileClean, substr(file, i, i), sep = '')
+  #     }
+  #   }
+  #   i=i+1
+  # }
+
+  #return(strsplit(fileClean, ';', fixed = T)[[1]])
 
 }
-
 
 generateParsedInput = function(statement){
   # Pattern ()()expression
@@ -143,9 +253,40 @@ generateParsedInput = function(statement){
   return(list(elements=elements, equation = equation))
 }
 
+generateParsedInputEquation = function(statement) {
+  #statement = "(all,i,IND)(all,o,OCC)x1lab[i,o] = x1lab_o[i] - SIGMA1LAB[i]*(p1lab[i,o] - p1lab_o[i])"
+  #statement="Equation E_SalesDecompA(all,c,COM)(all,d,DEST) INITSALES(c)*SalesDecomp(c,d) = 100*delSale(c,\"dom\",d)"
+
+  # Find all valid elements
+  # In equation, you can only specify (all,X,Y)
+  foundElements = gregexpr(
+    "\\(\\s*all\\s*,\\s*[a-z]{1,}[a-z0-9_]{0,}\\s*,\\s*[a-z]{1,}[a-z0-9_]{0,}\\s*\\)",
+    statement,
+    ignore.case = TRUE
+  )
+
+
+  elements = Map(function(f) {
+    substr(
+      statement,
+      foundElements[[1]][f],
+      foundElements[[1]][f] + attributes(foundElements[[1]])$match.length[f] - 1
+    )
+  }, 1:length(foundElements[[1]]))
+
+  equation = substr(
+    statement,
+    foundElements[[1]][length(foundElements[[1]])] + attributes(foundElements[[1]])$match.length[length(foundElements[[1]])],
+    nchar(statement)
+  )
+
+  return(list(elements = elements, equation = equation))
+}
+
 
 # This takes as input a filename for a tablo file and returns a list of statements
 tabloToStatements = function(tablo){
+
 
   #filename <- 'd:/temp/gtap.tab'
   lines = fileToLines(tablo)
@@ -164,11 +305,18 @@ tabloToStatements = function(tablo){
   , cleanLines)
 
 
+  # If there is no statement, then use the statment before
+  for(n in 2:length(cleanLines)){
+    if(cleanLines[[n]]$class==""){
+      cleanLines[[n]]$class = cleanLines[[n-1]]$class
+    }
+  }
+
   cleanLinesParsed = Map(function(f){
     if(f$class=='equation'){
       # Equations are recorded very differently from the rest of the objects in TABLO
-      getEquationName=readFirstWord(f$command)
-      temp =generateParsedInput(getEquationName$rest)
+      getEquationName=readEquationName(f$command)
+      temp =generateParsedInputEquation(getEquationName$rest)
       temp$equationName=getEquationName$firstWord
     }else {
       temp = generateParsedInput(f$command)

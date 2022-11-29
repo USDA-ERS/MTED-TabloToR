@@ -30,14 +30,14 @@ processEquationSetupStatement = function(s) {
         paste(
           'length(',
           unlist(Map(function(f)
-            deparse(f), dn)),
+            deparse1(f), dn)),
           ')',
           sep = '',
           collapse = ','
         ),
         paste(
           Map(function(f)
-            sprintf('%s=%s', deparse(f), deparse(f)),
+            sprintf('%s=%s', deparse1(f), deparse(f)),
             dn),
           sep = '',
           collapse = ','

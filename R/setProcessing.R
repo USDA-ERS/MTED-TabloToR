@@ -1,10 +1,12 @@
 removeFunctions = function(exp) {
   return(str2lang(gsub('\\)', ']', gsub(
-    '\\(', '[', deparse(exp)
+    '\\(', '[', deparse1(exp)
   ))))
 }
 correctFormula = function(formulaText) {
-  formulaText = str2lang(gsub('\\]', ')', gsub('\\[', '(', deparse(formulaText))))
+
+  #formulaText = str2lang(gsub('\\]', ')', gsub('\\[', '(', deparse(gsub(":", "%:%", gsub("\\(all,", "all(", gsub('>==','>=',gsub('<==','<=',gsub('=','==',formulaText)))))))))
+  formulaText = str2lang(gsub('\\]', ')', gsub('\\[', '(', deparse1(formulaText))))
   exp = str2lang(formulaText)
 
   exp = functionToData(exp)

@@ -31,7 +31,7 @@ processUpdateStatement = function(s) {
     for (l in 1:length(qualifiers)) {
       q = str2lang(qualifiers[[l]])
       if (length(q) == 4) {
-        condition[[length(condition) + 1]] = deparse(correctFormula(deparse(q[[4]])), width.cutoff = 500)
+        condition[[length(condition) + 1]] = deparse1(correctFormula(deparse(q[[4]])))
       }
     }
 
@@ -40,29 +40,29 @@ processUpdateStatement = function(s) {
       if (l == 1) {
         expr = sprintf(
           'for(%s in %s){%s}',
-          deparse(q[[2]]),
-          deparse(q[[3]]),
+          deparse1(q[[2]]),
+          deparse1(q[[3]]),
           ifelse(
             length(condition) == 0,
-            deparse(frm, width.cutoff = 500),
+            deparse1(frm),
             sprintf(
               'if(%s){%s}',
               paste(condition, collapse = '&'),
-              deparse(frm, width.cutoff = 500)
+              deparse1(frm)
             )
           )
         )
       } else {
         expr = sprintf(
           'for(%s in %s){%s}',
-          deparse(q[[2]], width.cutoff = 500),
-          deparse(q[[3]], width.cutoff = 500),
+          deparse1(q[[2]]),
+          deparse1(q[[3]]),
           expr
         )
       }
     }
   } else{
-    expr = deparse(frm, width.cutoff = 500)
+    expr = deparse1(frm)
   }
-  return(deparse(sumToMap(str2lang(expr)), width.cutoff = 500))
+  return(deparse1(sumToMap(str2lang(expr))))
 }
