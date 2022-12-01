@@ -1,40 +1,3 @@
-# getVarCoefsEquation = function(expr){
-#   expr[[1]]=as.name('-')
-#
-#   print(expr)
-#
-#   toRet= list()
-#   toRet= getVarCoefs(expr,toRet)
-#   return(toRet)
-# }
-#
-# getVarCoefs=function(expr,ret, sign=1){
-#   if(expr[[1]]=='*'){
-#     nmult=length(expr)
-#     if(sign==1){
-#       ret[[length(ret)+1]] = list(coef=expr[[2]], var=expr[[3]])
-#     }else{
-#       ret[[length(ret)+1]] = list(coef=call('*',sign,expr[[2]]), var=expr[[3]])
-#     }
-#
-#   } else if (expr[[1]]=='+'){
-#     ret=getVarCoefs(expr[[2]],ret)
-#     ret=getVarCoefs(expr[[3]],ret)
-#   } else if (expr[[1]]=='-'){
-#     ret=getVarCoefs(expr[[2]],ret)
-#     ret=getVarCoefs(expr[[3]],ret, sign=-1)
-#   } else if (expr[[1]]=='['){
-#     ret[[length(ret)+1]] = list(coef=sign*1, var=expr)
-#   } else if (expr[[1]]=='('){
-#     ret[[length(ret)+1]] = list(coef=sign*1, var=expr)
-#   }
-#   return(ret)
-# }
-#
-#
-# getVarCoefsEquation(str2lang('a[r]=U[r]*b[r]-PP[r]*c[r]'))
-# getVarCoefsEquation(str2lang('a[r]=U[r]*b[r]'))
-#
 getVarCoef = function(expr,
                       sets = list(),
                       coefficient = 1) {
@@ -74,7 +37,6 @@ getVarCoef = function(expr,
   return(toRet)
 }
 
-#getVarCoef(str2lang(s$parsed$equation))
 
 unlistVarCoef = function(obj) {
   toRet = list()
@@ -92,7 +54,8 @@ unlistVarCoef = function(obj) {
 }
 
 generateEquationCoefficients = function(equationStatements) {
-  toRet = list('equationMatrixList=list()')
+  #toRet = list('equationMatrixList=list()')
+  toRet = list()
   for (s in equationStatements) {
     # Get the formula for each variable
     frm = correctFormula(s$parsed$equation)
@@ -125,16 +88,7 @@ generateEquationCoefficients = function(equationStatements) {
     for (v in variables) {
       #Loop through the qualifiers (zeroth is the initial equation)
       expr = sprintf(
-        #        "eqcoeff[%s,%s]= %s",
         "list(list(equation=%s,variable = %s, expression= %s))",
-
-
-        # sprintf(
-        #   ifelse(length(equationIndices)>0,"sprintf('%s[%s]',%s)",'"%s[%s]"'),
-        #   equationName,
-        #   paste(rep('\"%s\"', length(equationIndices)), collapse = ','),
-        #   paste(unlist(equationIndices), collapse = ',')
-        # ),
 
         ifelse(length(equationIndices)>0,sprintf(
           "sprintf('%s[%s]',%s)",
@@ -147,12 +101,6 @@ generateEquationCoefficients = function(equationStatements) {
           paste(rep('\"%s\"', length(equationIndices)), collapse = ',')
         )),
 
-        # sprintf(
-        #   ifelse(length(v$indices)>0,"sprintf('%s[%s]',%s)",'"%s[%s]"'),
-        #   deparse1(v$varname),
-        #   paste(rep('\"%s\"', length(v$indices)), collapse = ','),
-        #   paste(unlist(v$indices), collapse = ',')
-        # ),
         ifelse(
           length(v$indices) > 0,
           sprintf(
@@ -167,38 +115,35 @@ generateEquationCoefficients = function(equationStatements) {
             paste(rep('\"%s\"', length(v$indices)), collapse = ',')
           )
         ),
-        #deparse(v$variable),
         deparse1(sumToMap(v$coefficient))
       )
       for (qualifier in c(qualifiers, v$qualifiers)) {
         q = str2lang(qualifier)
         expr = sprintf(
-          #          'for(%s in %s){%s}',
           'unlist(Map(function(%s)%s,%s),recursive=F,use.names=F)',
           deparse1(q[[2]]),
           expr,
           deparse1(q[[3]])
         )
       }
-      #toRet[[length(toRet) + 1]] = expr
-      toRet[[length(toRet) + 1]] = sprintf('equationMatrixList=c(equationMatrixList,%s)',expr)
+      toRet[[length(toRet) + 1]] = sprintf('%s',expr)
     }
 
 
   }
 
+  combinedExpression = sprintf("equationMatrixList=unlist(list(%s),recursive=FALSE)", paste(toRet,collapse=","))
+
+
   f = str2lang('function(data)return(data)')
   w = str2lang('within(data,{})')
-  #c1=0
-  for (tr in toRet) {
-    #c1=c1+1
-#    w[[3]][[length(w[[3]]) + 1]] = str2lang(sprintf("message(%s)",c1))
-    w[[3]][[length(w[[3]]) + 1]] = str2lang(tr)
-  }
+  # for (tr in toRet) {
+  #   w[[3]][[length(w[[3]]) + 1]] = str2lang(tr)
+  # }
+
+  w[[3]][[length(w[[3]]) + 1]] = parse(text=combinedExpression)[[1]]
 
   f[[3]][[2]] = w
 
   return(eval(f))
-
-
 }
