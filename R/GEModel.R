@@ -51,15 +51,41 @@ GEModel = setRefClass(
       jNames = unlist(Map(function(i)
         i$variable, data$equationMatrixList))
       jNumbers = data$variableNumbers[jNames]
+
+      # tictoc::tic()
+      # xValues = unlist(Map(
+      #   function(i)
+      #     ifelse(
+      #       #substr(i$variable, 1, regexpr('\\[', i$variable) - 1) %in% changeVariables,
+      #       i$variable %in% changeVariables,
+      #       0.01,
+      #       1
+      #     ) * i$expression,
+      #   data$equationMatrixList
+      # ))
+      # tictoc::toc()
+
+      tictoc::tic()
       xValues = unlist(Map(
         function(i)
-          ifelse(
-            substr(i$variable, 1, regexpr('\\[', i$variable) - 1) %in% changeVariables,
-            0.01,
-            1
-          ) * i$expression,
+          i$expression,
         data$equationMatrixList
       ))
+
+      names(xValues) = unlist(Map(
+        function(i)
+          i$variable,
+        data$equationMatrixList
+      ))
+
+      relChangeVariables = intersect(changeVariables, names(xValues))
+      toChange = which(names(xValues) %in% relChangeVariables)
+      xValues[toChange] = xValues[toChange] * 0.01
+      #xValues2[relChangeVariables] = xValues2[relChangeVariables] * 0.01
+
+      tictoc::toc()
+
+      #browser()
 
       data$eqcoeff = sparseMatrix(
         i = iNumbers,
@@ -103,7 +129,10 @@ GEModel = setRefClass(
       return(iterationSolution)
     },
     solveModel = function(iter = 3, type='linear') {
-      subShocks = ifelse(names(shocks) %in% changeVariables, shocks/iter, 100 * (exp(log(1 + shocks / 100) / iter) - 1))
+
+      # subShocks = ifelse(names(shocks) %in% changeVariables, shocks/iter, 100 * (exp(log(1 + shocks / 100) / iter) - 1))
+
+      subShocks = shocks/iter
 
       names(subShocks)=names(shocks)
 
@@ -113,8 +142,9 @@ GEModel = setRefClass(
 
       for (it in 1:iter) {
         message(sprintf('Iteration %s', it))
+        tictoc::tic()
         data <<- equationCoefficientGenerator(data)
-
+        tictoc::toc()
         if(type =='linear'){
           iterationSolution = generateSolution(subShocks)
         }else if (type=='quadratic'){
@@ -198,33 +228,56 @@ GEModel = setRefClass(
           solution<<-intermediateSolution
         }
 
-        for (n in names(solution)) {
-          data <<- within(data, {
-            #eval(str2lang(sprintf('%s = %f', n, solution[n])))
-            eval(str2lang(sprintf('%s = %f', n, iterationSolution[n])))
-          })
-        }
+        #browser()
+        tictoc::tic()
+        # for (n in names(solution)) {
+        #   data <<- within(data, {
+        #     #eval(str2lang(sprintf('%s = %f', n, solution[n])))
+        #     eval(str2lang(sprintf('%s = %f', n, iterationSolution[n])))
+        #   })
+        # }
+        data <<- within(data,{
+          eval(parse(text=sprintf("%s=%s;", names(solution), iterationSolution[names(solution)])))
+        })
+        tictoc::toc()
 
-        for (n in names(shocks)) {
-          data <<-  within(data, {
-            #            eval(str2lang(sprintf('%s = %f', n, shocks[n])))
-                        eval(str2lang(sprintf('%s = %f', n, subShocks[n])))
-          })
-        }
 
+        tictoc::tic()
+        # for (n in names(shocks)) {
+        #   data <<-  within(data, {
+        #     #            eval(str2lang(sprintf('%s = %f', n, shocks[n])))
+        #                 eval(str2lang(sprintf('%s = %f', n, subShocks[n])))
+        #   })
+        # }
+        data <<- within(data,{
+          eval(parse(text=sprintf("%s=%s;", names(shocks), subShocks[names(shocks)])))
+        })
+        tictoc::toc()
         data <<- generateUpdates(data)
       }
-      for (n in names(solution)) {
-        data <<- within(data, {
-          eval(str2lang(sprintf('%s = %f', n, solution[n])))
-        })
-      }
 
-      for (n in names(shocks)) {
-        data <<-  within(data, {
-          eval(str2lang(sprintf('%s = %f', n, shocks[n])))
-        })
-      }
+      tictoc::tic()
+      # for (n in names(solution)) {
+      #   data <<- within(data, {
+      #     eval(str2lang(sprintf('%s = %f', n, solution[n])))
+      #   })
+      # }
+      data <<- within(data,{
+        eval(parse(text=sprintf("%s=%s;", names(solution), solution[names(solution)])))
+      })
+      tictoc::toc()
+
+      tictoc::tic()
+      # for (n in names(shocks)) {
+      #   data <<-  within(data, {
+      #     eval(str2lang(sprintf('%s = %f', n, shocks[n])))
+      #   })
+      # }
+      data <<- within(data,{
+        eval(parse(text=sprintf("%s=%s;", names(shocks), shocks[names(shocks)])))
+      })
+
+      tictoc::toc()
 
     }
   )
