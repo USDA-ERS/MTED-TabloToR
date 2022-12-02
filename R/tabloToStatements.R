@@ -325,5 +325,6 @@ tabloToStatements = function(tablo){
     return(f)
   },cleanLines)
 
+  return(cleanLinesParsed)
 
 }

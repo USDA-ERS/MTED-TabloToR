@@ -13,14 +13,6 @@ processTablo = function(tablo) {
     statements
   ))
 
-  # gs = generateSets(Filter(function(f)
-  #   f$class == 'set', statements))
-  # gc = generateCoefficients(Filter(function(f)
-  #   f$class == 'coefficient', statements))
-  # gr = generateReads(Filter(function(f)
-  #   f$class == 'read', statements))
-  # gf = generateFormulas(Filter(function(f)
-  #   f$class == 'formula', statements))
   gem = generateEquationCoefficientMatrix(
     Filter(function(f)
       f$class == 'variable', statements),
@@ -39,19 +31,22 @@ processTablo = function(tablo) {
 
   return(
     list(
-      # setGenerator = gs,
-      # coefficientGenerator = gc,
-      # readGenerator = gr,
-      # formulaGenerator = gf,
       skeletonGenerator = generator,
       equationCoefficientMatrixGenerator = gem,
       equationCoefficientGenerator = gec,
       changeVariables = unlist(Map(
-        function(f)
-          readFirstWord(f$parsed$equation)$firstWord,
+        function(f){
+          paren = regexpr('\\(', f$parsed$equation)
+          if(paren==-1) {
+            return(f$parsed$equation)
+          } else {
+            return(substr(f$parsed$equation,1,paren-1))
+          }
+        },
         Filter(
           function(f)
-            '(change)' %in% f$parsed$element,
+            #!'(change)' %in% f$parsed$element,
+            any(grepl('change',f$parsed$element)),
           Filter(function(f)
             f$class == 'variable', statements)
         )
@@ -62,37 +57,3 @@ processTablo = function(tablo) {
     )
   )
 }
-#
-# require(HARr)
-#
-
-
-# origData = list(
-#   GTAPSETS = read_har('C:\\Users\\MAROS.IVANIC\\Documents\\GTAP10\\sets.har'),
-#   GTAPPARM = read_har('C:\\Users\\MAROS.IVANIC\\Documents\\GTAP10\\default.prm'),
-#   GTAPDATA = read_har('C:\\Users\\MAROS.IVANIC\\Documents\\GTAP10\\basedata.har')
-# )
-#
-
-
-
-#
-#
-# with(data,
-#      for (r in REG) {
-#        for (j in PROD_COMM) {
-#          for (i in ENDWS_COMM) {
-#            print(sprintf("SPFACTPRICE[\"%s\",\"%s\",\"%s\"]",
-#                          i, j, r))
-#            print(sprintf("pfe[\"%s\",\"%s\",\"%s\"]",
-#                          i, j, r))
-#          }
-#        }
-#      })
-#
-# dimnames(data$eqcoeff)[[1]][grep('SPFACTPRICE', dimnames(data$eqcoeff)[[1]])]
-# dimnames(data$eqcoeff)[[2]][grep('pfe', dimnames(data$eqcoeff)[[2]])]
-#
-# data$VVA
-#
-# GTAPSETS = read_har('C:\\Users\\MAROS.IVANIC\\Documents\\GTAP10\\sets.har')
