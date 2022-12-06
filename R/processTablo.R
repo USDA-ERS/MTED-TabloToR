@@ -51,6 +51,18 @@ processTablo = function(tablo) {
             f$class == 'variable', statements)
         )
       )),
+      variables = unlist(Map(
+        function(f){
+          paren = regexpr('\\(', f$parsed$equation)
+          if(paren==-1) {
+            return(f$parsed$equation)
+          } else {
+            return(substr(f$parsed$equation,1,paren-1))
+          }
+        },
+          Filter(function(f)
+            f$class == 'variable', statements)
+      )),
       generateEquationLevelValues = geq,
       generateVariables = gev,
       generateUpdates = gup

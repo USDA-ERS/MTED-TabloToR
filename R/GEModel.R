@@ -18,7 +18,9 @@ GEModel = setRefClass(
     data = 'list',
     solution = 'numeric',
     changeVariables = 'character',
-    basicChangeVariables = 'character'
+    variables = 'character',
+    basicChangeVariables = 'character',
+    exogenousVariables = 'list'
   ),
   methods = list(
     # Loads a tablo without any data (only produces generic functions to genrate coefficients/equation coefficients etc.)
@@ -33,12 +35,14 @@ GEModel = setRefClass(
       if(!is.null(results$changeVariables)){
       basicChangeVariables <<- results$changeVariables
       }
+      variables <<- results$variables
     },
     loadData = function(inputData) {
       #browser()
       data <<- skeletonGenerator(inputData)
       data <<- equationCoefficientMatrixGenerator(data)
       data <<- generateVariables(data)
+      exogenousVariables <<- data[variables]
       changeVariables <<- data$variables[substr(data$variables,1,regexpr('\\[',data$variables)-1) %in% basicChangeVariables]
     },
     setShocks = function(shocks) {
@@ -91,6 +95,8 @@ GEModel = setRefClass(
 
       bigMatrix = data$eqcoeff[, setdiff(colnames(data$eqcoeff), names(shocks))]
 
+      #browser()
+
       smallMatrix = data$eqcoeff[, names(shocks)]
 
       ### Do backsolving first
@@ -110,7 +116,11 @@ GEModel = setRefClass(
 
       exoVectorReduced = exoVector[keepI,,drop=F]
 
+      tictoc::tic()
       solutionReduced = SparseM::solve(bigMatrixReduced,exoVectorReduced,sparse=T,tol=1e-40)
+      tictoc::toc()
+
+      #browser()
 
       solutionExtra = SparseM::solve(backSolveMatrixRight,-backSolveMatrixLeft%*%solutionReduced,sparse=T,tol=1e-40)
 
@@ -119,6 +129,16 @@ GEModel = setRefClass(
       return(iterationSolution)
     },
     solveModel = function(iter = 3, steps = c(1,3)) {
+
+      # Create a shock variable
+
+      #browser()
+
+      shocks <<- do.call(c,unname(Map(function(f){
+        toVector(exogenousVariables[[f]],f)
+      }, names(exogenousVariables))))
+
+      shocks<<-shocks[!is.na(shocks)]
 
       #browser()
 
@@ -193,6 +213,12 @@ GEModel = setRefClass(
 
           solutionPctChangeVariables = setdiff(names(stepSolution[[step]]), changeVariables)
 
+          #browser()
+          # If any step <-100 we have to treat it as a change variable (like GEMPACK)
+          sols = apply(do.call(cbind,subStepSolution)<=-100,MARGIN = 1, any)
+
+          solutionPctChangeVariables=setdiff(solutionPctChangeVariables, names(sols[sols]))
+
           stepSolution[[step]][solutionPctChangeVariables] = (exp(rowSums(log(1+do.call(cbind,subStepSolution)[solutionPctChangeVariables,, drop = FALSE]/100)))-1)*100
         }
 
@@ -206,7 +232,7 @@ GEModel = setRefClass(
         } else if(length(steps)==2) {
 
           # We have two sets of steps and so we can extrapolate
-
+          #browser()
           iterationSolution[[it]] = colSums(t(do.call(cbind,stepSolution)) * (steps[c(1,2)] * c(1,-1))) / (steps[1]-steps[2])
 
 
@@ -253,8 +279,12 @@ GEModel = setRefClass(
         data <<- generateUpdates(data)
       }
 
+      if(length(iterationSolution)==1){
+        solution <<- iterationSolution[[1]]
+      } else {
+        solution <<- rowSums(do.call(cbind,iterationSolution))
+      }
 
-      solution <<- rowSums(do.call(cbind,iterationSolution))
 
       solutionPctChangeVariables = setdiff(names(solution), changeVariables)
 
