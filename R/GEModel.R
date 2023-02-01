@@ -20,7 +20,7 @@ GEModel = setRefClass(
     changeVariables = 'character',
     variables = 'character',
     basicChangeVariables = 'character',
-    exogenousVariables = 'list'
+    variableValues = 'list'
   ),
   methods = list(
     # Loads a tablo without any data (only produces generic functions to genrate coefficients/equation coefficients etc.)
@@ -42,7 +42,7 @@ GEModel = setRefClass(
       data <<- skeletonGenerator(inputData)
       data <<- equationCoefficientMatrixGenerator(data)
       data <<- generateVariables(data)
-      exogenousVariables <<- data[variables]
+      variableValues <<- data[variables]
       changeVariables <<- data$variables[substr(data$variables,1,regexpr('\\[',data$variables)-1) %in% basicChangeVariables]
     },
     setShocks = function(shocks) {
@@ -135,8 +135,8 @@ GEModel = setRefClass(
       #browser()
 
       shocks <<- do.call(c,unname(Map(function(f){
-        toVector(exogenousVariables[[f]],f)
-      }, names(exogenousVariables))))
+        toVector(variableValues[[f]],f)
+      }, names(variableValues))))
 
       shocks<<-shocks[!is.na(shocks)]
 
