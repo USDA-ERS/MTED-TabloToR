@@ -112,6 +112,7 @@ cleanLine = function(line) {
 
 # Take a file name, read the file, remove comments and return a vector of tablo lines
 fileToLines = function(fileName) {
+  #browser()
   file = tolower(readChar(fileName, file.info(fileName)$size))
 
 
@@ -174,16 +175,21 @@ fileToLines = function(fileName) {
 
   exclamations = gregexpr(";", fileClean2, )[[1]]
 
-  breakLine = Filter(function(f){
+  if(beginSmallComment[1]==-1){
+    breakLine = exclamations
+  } else{
+    breakLine = Filter(function(f){
       !any(f>beginSmallComment & f<endSmallComment)
-  }, exclamations)
+    }, exclamations)
+
+  }
 
 
   lineBeginnings = c(1,breakLine+1)
   lineEnds = c(breakLine-1, nchar(fileClean2))
 
   toReturn = unlist(Map(function(f){
-    trimws(gsub("\\n","",gsub("\\r","",substr(fileClean2, lineBeginnings[f], lineEnds[f]))))
+    trimws(gsub("\\n"," ",gsub("\\r"," ",substr(fileClean2, lineBeginnings[f], lineEnds[f]))))
   }, 1:length(lineBeginnings)))
 
   return(toReturn[nchar(toReturn)>0])
@@ -287,6 +293,7 @@ generateParsedInputEquation = function(statement) {
 # This takes as input a filename for a tablo file and returns a list of statements
 tabloToStatements = function(tablo){
 
+  #browser()
 
   #filename <- 'd:/temp/gtap.tab'
   lines = fileToLines(tablo)

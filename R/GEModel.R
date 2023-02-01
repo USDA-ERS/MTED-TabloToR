@@ -49,6 +49,7 @@ GEModel = setRefClass(
       shocks <<- shocks
     },
     generateSolution = function(subShocks){
+      #browser()
       iNames = unlist(Map(function(i)
         i$equation, data$equationMatrixList))
       iNumbers = data$equationNumbers[iNames]
@@ -93,38 +94,40 @@ GEModel = setRefClass(
       )
 
 
-      bigMatrix = data$eqcoeff[, setdiff(colnames(data$eqcoeff), names(shocks))]
+      bigMatrix = data$eqcoeff[, setdiff(colnames(data$eqcoeff), names(shocks)), drop = FALSE]
 
       #browser()
 
-      smallMatrix = data$eqcoeff[, names(shocks)]
+      smallMatrix = data$eqcoeff[, names(shocks), drop  = FALSE]
 
-      ### Do backsolving first
-      bigMatrix2 = as(bigMatrix, 'TsparseMatrix')
-      tt=table(bigMatrix2@j)
-      removeJ=bigMatrix2@j[which(bigMatrix2@j %in% as.numeric(names(tt)[tt==1]))]
-      removeI=bigMatrix2@i[which(bigMatrix2@j %in% as.numeric(names(tt)[tt==1]))]
-
-      keepI=setdiff(1:dim(bigMatrix)[1] ,removeI+1)
-      keepJ=setdiff(1:dim(bigMatrix)[1] ,removeJ+1)
-
-      backSolveMatrixLeft = bigMatrix[removeI+1,keepJ]
-      backSolveMatrixRight = bigMatrix[removeI+1,removeJ+1]
-      bigMatrixReduced=bigMatrix[keepI,keepJ]
+      # ### Do backsolving first
+      # bigMatrix2 = as(bigMatrix, 'TsparseMatrix')
+      # tt=table(bigMatrix2@j)
+      # removeJ=bigMatrix2@j[which(bigMatrix2@j %in% as.numeric(names(tt)[tt==1]))]
+      # removeI=bigMatrix2@i[which(bigMatrix2@j %in% as.numeric(names(tt)[tt==1]))]
+      #
+      # keepI=setdiff(1:dim(bigMatrix)[1] ,removeI+1)
+      # keepJ=setdiff(1:dim(bigMatrix)[1] ,removeJ+1)
+      #
+      # backSolveMatrixLeft = bigMatrix[removeI+1,keepJ, drop = FALSE]
+      # backSolveMatrixRight = bigMatrix[removeI+1,removeJ+1, drop = FALSE]
+      # bigMatrixReduced=bigMatrix[keepI,keepJ, drop = FALSE]
 
       exoVector=-smallMatrix %*% subShocks
 
-      exoVectorReduced = exoVector[keepI,,drop=F]
+      # exoVectorReduced = exoVector[keepI,,drop=FALSE]
+      #
+      # tictoc::tic()
+      # solutionReduced = SparseM::solve(bigMatrixReduced,exoVectorReduced,sparse=T,tol=1e-40)
+      # tictoc::toc()
+      #
+      # #browser()
+      #
+      # solutionExtra = SparseM::solve(backSolveMatrixRight,-backSolveMatrixLeft%*%solutionReduced,sparse=T,tol=1e-40)
+      #
+      # iterationSolution =c(solutionExtra,solutionReduced) [colnames(bigMatrix)]
 
-      tictoc::tic()
-      solutionReduced = SparseM::solve(bigMatrixReduced,exoVectorReduced,sparse=T,tol=1e-40)
-      tictoc::toc()
-
-      #browser()
-
-      solutionExtra = SparseM::solve(backSolveMatrixRight,-backSolveMatrixLeft%*%solutionReduced,sparse=T,tol=1e-40)
-
-      iterationSolution =c(solutionExtra,solutionReduced) [colnames(bigMatrix)]
+      iterationSolution=SparseM::solve(bigMatrix,exoVector,sparse=T,tol=1e-40)
 
       return(iterationSolution)
     },
@@ -143,25 +146,32 @@ GEModel = setRefClass(
       #browser()
 
       # shocks for change variables are not compounded
-      subShocks = shocks/iter
+      #subShocks = shocks/iter
 
-      # list of relevant change variables in shocks
-      pctChangeShocks = setdiff(names(subShocks), changeVariables)
+      # # list of relevant change variables in shocks
+      # pctChangeShocks = setdiff(names(subShocks), changeVariables)
+      #
+      # # shocks need to be split for each subinterval
+      # subShocks[pctChangeShocks] = (exp(log(1+shocks[pctChangeShocks]/100)/iter)-1)*100
 
-      # shocks need to be split for each subinterval
-      subShocks[pctChangeShocks] = (exp(log(1+shocks[pctChangeShocks]/100)/iter)-1)*100
 
-
-      names(subShocks)=names(shocks)
+      #names(subShocks)=names(shocks)
 
       solution <<- as.numeric(c())
 
       iterationSolution = list()
 
+      appliedShocks = shocks
+      appliedShocks[] = 0
+
       # Go through each iteration (subinterval)
       for (it in 1:iter) {
         message(sprintf('Iteration %s/%s', it, iter))
 
+        remainingShocks = ((1+shocks/100)/(1+appliedShocks/100)-1)*100
+        subShocks = remainingShocks/(iter-it+1)
+
+        appliedShocks = ((1+ appliedShocks/100) * (1+subShocks/100)-1)*100
 
         # Within each iteration (subinterval) do steps
 
@@ -178,14 +188,26 @@ GEModel = setRefClass(
           data <<- originalData
 
           # Except for change variables...
-          stepShocks = subShocks/steps[step]
+          # stepShocks = subShocks/steps[step]
 
           # .... step shocks are compunded
-          stepShocks[pctChangeShocks] =  (exp(log(1+subShocks[pctChangeShocks]/100)/steps[step])-1)*100
+          #stepShocks[pctChangeShocks] =  (exp(log(1+subShocks[pctChangeShocks]/100)/steps[step])-1)*100
 
           subStepSolution=list()
 
+          appliedSubShocks = subShocks
+          appliedSubShocks[] = 0
+
+
           for(currentStep in 1:steps[step]){
+
+            remainingSubShocks = ((1+subShocks/100)/(1+appliedSubShocks/100)-1)*100
+
+            stepShocks = remainingSubShocks/(steps[step]-currentStep+1)
+
+            appliedSubShocks = ((1+ appliedSubShocks/100) * (1+stepShocks/100)-1)*100
+
+
             data <<- equationCoefficientGenerator(data)
             message(sprintf('Step %s/%s', currentStep,steps[step]))
             #browser()
@@ -213,13 +235,14 @@ GEModel = setRefClass(
 
           solutionPctChangeVariables = setdiff(names(stepSolution[[step]]), changeVariables)
 
+          stepSolution[[step]][solutionPctChangeVariables] = ((apply(do.call(cbind,subStepSolution)/100+1, MARGIN=1, FUN = prod)-1)*100)[solutionPctChangeVariables]
           #browser()
           # If any step <-100 we have to treat it as a change variable (like GEMPACK)
-          sols = apply(do.call(cbind,subStepSolution)<=-100,MARGIN = 1, any)
+          # sols = apply(do.call(cbind,subStepSolution)<=-100,MARGIN = 1, any)
+          #
+          # solutionPctChangeVariables=setdiff(solutionPctChangeVariables, names(sols[sols]))
 
-          solutionPctChangeVariables=setdiff(solutionPctChangeVariables, names(sols[sols]))
-
-          stepSolution[[step]][solutionPctChangeVariables] = (exp(rowSums(log(1+do.call(cbind,subStepSolution)[solutionPctChangeVariables,, drop = FALSE]/100)))-1)*100
+          #stepSolution[[step]][solutionPctChangeVariables] = (exp(rowSums(log(1+do.call(cbind,subStepSolution)[solutionPctChangeVariables,, drop = FALSE]/100)))-1)*100
         }
 
         #browser()
@@ -276,19 +299,22 @@ GEModel = setRefClass(
           eval(parse(text=sprintf("%s=%s;", names(shocks), subShocks[names(shocks)])))
         })
         tictoc::toc()
+
+        #browser()
         data <<- generateUpdates(data)
       }
+
+      #browser()
 
       if(length(iterationSolution)==1){
         solution <<- iterationSolution[[1]]
       } else {
         solution <<- rowSums(do.call(cbind,iterationSolution))
+        solutionPctChangeVariables = setdiff(names(solution), changeVariables)
+        solution[solutionPctChangeVariables] <<- ((apply(1+do.call(cbind,iterationSolution)/100, MARGIN = 1, FUN = prod)-1)*100)[solutionPctChangeVariables]
       }
 
-
-      solutionPctChangeVariables = setdiff(names(solution), changeVariables)
-
-      solution[solutionPctChangeVariables]<<- (exp(rowSums(log(1+do.call(cbind,iterationSolution)[solutionPctChangeVariables,, drop = FALSE]/100)))-1)*100
+      #solution[solutionPctChangeVariables]<<- (exp(rowSums(log(1+do.call(cbind,iterationSolution)[solutionPctChangeVariables,, drop = FALSE]/100)))-1)*100
 
       tictoc::tic()
       data <<- within(data,{

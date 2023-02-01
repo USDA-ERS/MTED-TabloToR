@@ -15,9 +15,12 @@ processUpdateStatement = function(s) {
       frm[[3]] = call('*', frm[[2]], call('+', 1, call('/', frm[[3]], 100)))
     } else {
       if (frm[[3]][[1]] == '*') {
-        frm[[3]] = call('*', frm[[2]] , call('+', 1, call('+', call(
+        # frm[[3]] = call('*', frm[[2]] , call('+', 1, call('+', call(
+        #   '/', frm[[3]][[2]], 100
+        # ),  call('/', frm[[3]][[3]], 100))))
+        frm[[3]] = call('*', frm[[2]] ,  call("*", call('+', 1, call(
           '/', frm[[3]][[2]], 100
-        ),  call('/', frm[[3]][[3]], 100))))
+        )), call('+',1, call('/', frm[[3]][[3]], 100))))
       } else{
         frm[[3]] = call('*', frm[[2]], call('+', 1, call('/', frm[[3]], 100)))
       }
