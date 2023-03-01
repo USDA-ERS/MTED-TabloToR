@@ -75,19 +75,19 @@ for(var in c("afall",
       "tradslack",
       "tx",
       "txs")){
-  model$exogenousVariables[[var]][]=0
+  model$variableValues[[var]][]=0
 }
 
-model$exogenousVariables$qo[model$data$endw_comm,] = 0
+model$variableValues$qo[model$data$endw_comm,] = 0
 
 # Specify sets for shocks 
 
 ag= c("grains", "v_f", "osd", "c_b", "pfb", "ocr", "ctl", "oap", "rmk", "wol")
-model$exogenousVariables$aoall[ag,c("northam")] = 1
+model$variableValues$aoall[ag,c("northam")] = 1
 
 agFood = c("grains", "v_f", "osd", "c_b", "pfb", "ocr", "ctl", "oap", "rmk", "wol", "food")
 
-model$exogenousVariables$tms[agFood,,c("northam")] = (model$data$viws[agFood,,c("northam")] / model$data$vims[agFood,,c("northam")] -1)*100
+model$variableValues$tms[agFood,,c("northam")] = (model$data$viws[agFood,,c("northam")] / model$data$vims[agFood,,c("northam")] -1)*100
 
 # Run the model
 model$solveModel(iter = 3,steps = c(1,3))
