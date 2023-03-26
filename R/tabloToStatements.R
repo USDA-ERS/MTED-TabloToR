@@ -289,7 +289,7 @@ generateParsedInputEquation = function(statement) {
   return(list(elements = elements, equation = equation))
 }
 
-
+# tablo = here::here("data/gtapv7/gtapv7.tab")
 # This takes as input a filename for a tablo file and returns a list of statements
 tabloToStatements = function(tablo){
 
@@ -297,6 +297,16 @@ tabloToStatements = function(tablo){
 
   #filename <- 'd:/temp/gtap.tab'
   lines = fileToLines(tablo)
+  
+  lines = gsub(' lt ', ' < ',
+           gsub(' le ', ' <= ',
+                gsub(' gt ', ' > ',
+                     gsub(
+                       ' ge ', ' >= ',
+                       gsub(' eq ', ' == ',
+                            gsub(' ne ', ' != ',
+                                 lines))
+                     ))))
 
   # Get a set of lines wiht comments out
   cleanLines = Map(cleanLine, lines)
@@ -310,7 +320,6 @@ tabloToStatements = function(tablo){
     return(f)
   }
   , cleanLines)
-
 
   # If there is no statement, then use the statment before
   for(n in 2:length(cleanLines)){

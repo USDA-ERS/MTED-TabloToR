@@ -3,12 +3,37 @@ removeFunctions = function(exp) {
     '\\(', '[', deparse1(exp)
   ))))
 }
+
 correctFormula = function(formulaText) {
 
+  if (grepl('IF\\(', formulaText)) {
+    
+    temp = strsplit(formulaText, split = "IF\\(")
+    if (length(temp[[1]] > 1)) {
+      for (f in 2:length(temp[[1]])) {
+        temp[[1]][[f]] <- paste0("IF(", sub(",(?![^()]*\\))", ") {", temp[[1]][[f]], perl = TRUE))
+        #Replace unopened parentheses with "}"
+        temp[[1]][[f]] <- gsub('(?:(\\((?:[^()]++|(?1))*\\))|(\\[(?:[^][]++|(?2))*]))(*SKIP)(*F)|[][()]', "}", temp[[1]][[f]], perl=TRUE)
+        # If there is a '}}" in the end, replace it by "})" (reason: gtapv7, equation:E_CNTalleffr)
+        temp[[1]][[f]] <- sub("}}(?!(.|\n)*}})", "}\\)", temp[[1]][[f]], perl=TRUE)
+        # Replace "=" inside parentheses with "=="
+        temp[[1]][[f]] <- sub("(?:\\G(?!^)|\\()[^()]*?\\K\\=", "==", temp[[1]][[f]], perl=TRUE)
+      }
+    }
+    formulaText = paste(temp[[1]],collapse="") 
+    # Replace "IF(" with "if(" 
+    formulaText = gsub('IF\\(', 'if\\(', formulaText)
+    # Replace " in " with " %in% " 
+    formulaText = gsub(' in ', ' %in% ', formulaText)
+    
+  }
+  
+  formulaText = gsub('\\$pos', 'match', formulaText)
+  
   #formulaText = str2lang(gsub('\\]', ')', gsub('\\[', '(', deparse(gsub(":", "%:%", gsub("\\(all,", "all(", gsub('>==','>=',gsub('<==','<=',gsub('=','==',formulaText)))))))))
   formulaText = str2lang(gsub('\\]', ')', gsub('\\[', '(', deparse1(formulaText))))
   exp = str2lang(formulaText)
-
+  
   exp = functionToData(exp)
   return(exp)
 }

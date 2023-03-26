@@ -28,14 +28,14 @@ processSetStatement = function(s) {
   }
   # SET INTERSECTION
   else if (grepl(".* = .* intersect .*", s$command)) {
-    command = str2lang(gsub('intersect', '+', s$command))
+    command = str2lang(gsub('intersect', '+', s$command))#!
     command[[3]][[1]] = as.name('intersect')
     #toRet[[deparse(command[[2]])]] = eval(command[[3]], toRet)
     toRet = sprintf('%s=%s', deparse1(command[[2]]), deparse1(command[[3]]))
   }
   # SET FORMULA
   else if (grepl(".* = \\(all,.*,.*\\)", s$command)) {
-    preCommand = str2lang(gsub(":", ",", gsub("\\(all,", "all(", gsub('>==','>=',gsub('<==','<=',gsub('=','==',s$command))))))
+    preCommand = str2lang(gsub(":", ",", gsub("\\(all,", "all(", gsub('>==','>=',gsub('<==','<=',gsub('\\b=\\b','==',s$command))))))
 
     setName = deparse1(preCommand[[3]][[3]])
     standIn = deparse1(preCommand[[3]][[2]])

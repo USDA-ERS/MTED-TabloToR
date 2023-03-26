@@ -1,5 +1,5 @@
 generateSkeleton = function(statements) {
-  toRet = list('"/" <- function(x,y) ifelse(y==0,0,base:::"/"(x,y))
+  toRet <<- list('"/" <- function(x,y) ifelse(y==0,0,base:::"/"(x,y))
 ')
   for (s in statements) {
     if (s$class == 'set')
