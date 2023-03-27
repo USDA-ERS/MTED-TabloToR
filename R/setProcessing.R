@@ -51,10 +51,13 @@ functionToData = function(exp) {
                 '==',
                 '!=',
                 '<',
-                '>')
+                '>',
+                'if',
+                '{',
+                '%in%')
   if (length(exp) == 1) {
     return(exp)
-  } else    if (!(as.character(exp[[1]]) %in% dataNames)) {
+  } else if (!(as.character(exp[[1]]) %in% dataNames)) {
     dataName = exp[[1]]
     exp[[1]] = as.name('[')
 
