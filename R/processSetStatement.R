@@ -20,9 +20,10 @@ processSetStatement = function(s) {
     toRet = sprintf('%s=%s', deparse1(command[[2]]), deparse1(command[[3]]))
   }
   # SET UNION
-  else if (grepl(".* = .* union .*", s$command)) {
+  else if (grepl(".* = .* union|\\+ .*", s$command)) { # |\\+ to include statement "+" of gtapv7
     command = str2lang(gsub('union', '+', s$command))
-    command[[3]][[1]] = as.name('union')
+    command[[3]] = paste0('Reduce(union,list(', gsub('\\+', ',', deparse(command[[3]])), '))') #Using lists to work with 2+ elements
+    command[[3]] = str2lang(command[[3]])
     #toRet[[deparse(command[[2]])]] = eval(command[[3]], toRet)
     toRet = sprintf('%s=%s', deparse1(command[[2]]), deparse1(command[[3]]))
   }
@@ -33,6 +34,16 @@ processSetStatement = function(s) {
     #toRet[[deparse(command[[2]])]] = eval(command[[3]], toRet)
     toRet = sprintf('%s=%s', deparse1(command[[2]]), deparse1(command[[3]]))
   }
+  # SET PRODUCT
+  # else if (grepl(".* = .* \\b(x)\\b .*", s$command)) {
+  #   command = str2lang(gsub('\\b(x)\\b', '+', s$command))
+  #   #faster = max(command[[3]][[2]], command[[3]][[3]])
+  #   command[[3]] = paste0('paste0(', command[[3]][[2]] ,", " , command[[3]][[3]], ', collapse = \"_\")')
+  #   command[[3]] = str2lang(command[[3]])
+  #   
+  #   #toRet[[deparse(command[[2]])]] = eval(command[[3]], toRet)
+  #   toRet = command
+  # }
   # SET FORMULA
   else if (grepl(".* = \\(all,.*,.*\\)", s$command)) {
     preCommand = str2lang(gsub(":", ",", gsub("\\(all,", "all(", gsub('>==','>=',gsub('<==','<=',gsub('\\b=\\b','==',s$command))))))
@@ -60,6 +71,7 @@ processSetStatement = function(s) {
     from = regexpr('\\(', s$command)
     to = regexpr('\\)', s$command)
     elements = strsplit(substr(s$command, from + 1, to - 1), ',')[[1]]
+    elements = sub("^\\s+", "", elements) # Eliminate spaces in the beggining of elements names
 
     #toRet[[trimws(substr(s$command, 1, from - 1))]] = elements
     toRet = sprintf('%s=c(%s)',
