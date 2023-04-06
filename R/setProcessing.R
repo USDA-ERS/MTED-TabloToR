@@ -13,11 +13,13 @@ correctFormula = function(formulaText) {
       for (f in 2:length(temp[[1]])) {
         temp[[1]][[f]] <- paste0("IF(", sub(",(?![^()]*\\))", ") {", temp[[1]][[f]], perl = TRUE))
         #Replace unopened parentheses with "}"
-        temp[[1]][[f]] <- gsub('(?:(\\((?:[^()]++|(?1))*\\))|(\\[(?:[^][]++|(?2))*]))(*SKIP)(*F)|[][()]', "}", temp[[1]][[f]], perl=TRUE)
+        temp[[1]][[f]] <- gsub('(?:(\\((?:[^()]++|(?1))*\\))|(\\[(?:[^][]++|(?2))*]))(*SKIP)(*F)|[][()]', "} else {+0}", temp[[1]][[f]], perl=TRUE)
         # If there is a '}}" in the end, replace it by "})" (reason: gtapv7, equation:E_CNTalleffr)
-        temp[[1]][[f]] <- sub("}}(?!(.|\n)*}})", "}\\)", temp[[1]][[f]], perl=TRUE)
+        temp[[1]][[f]] <- sub("}} else {\\+0}(?!(.|\n)*}} else {\\+0})", "}\\)", temp[[1]][[f]], perl=TRUE)
         # Replace "=" inside parentheses with "=="
         temp[[1]][[f]] <- sub("(?:\\G(?!^)|\\()[^()]*?\\K\\=", "==", temp[[1]][[f]], perl=TRUE)
+        # add an else {+ 0} to avoid error
+        #temp[[1]][[f]] <- paste0(temp[[1]][[f]], " else {+0}")
       }
     }
     formulaText = paste(temp[[1]],collapse="") 
