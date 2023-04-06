@@ -44,15 +44,15 @@ processSetStatement = function(s) {
     toRet = paste0(command[1], "=", command[3])
   }
   # SET PRODUCT
-  # else if (grepl(".* = .* \\b(x)\\b .*", s$command)) {
-  #   command = str2lang(gsub('\\b(x)\\b', '+', s$command))
-  #   #faster = max(command[[3]][[2]], command[[3]][[3]])
-  #   command[[3]] = paste0('paste0(', command[[3]][[2]] ,", " , command[[3]][[3]], ', collapse = \"_\")')
-  #   command[[3]] = str2lang(command[[3]])
-  # 
-  #   #toRet[[deparse(command[[2]])]] = eval(command[[3]], toRet)
-  #   toRet = command
-  # }
+  else if (grepl(".* = .*( x ).*", s$command)) {
+    command = str2lang(gsub('\\b( x )\\b', '*', s$command))
+    toRet = paste0(command[[2]],
+                   "= ",
+                   "paste0(",
+                   "expand.grid(s1=", command[[3]][[2]], ", s2=", command[[3]][[3]], ")$s1, ",
+                   '"_", ',
+                   "expand.grid(s1=", command[[3]][[2]], ", s2=", command[[3]][[2]], ")$s2)")
+  }
   # SET FORMULA
   else if (grepl(".* = \\(all,.*,.*\\)", s$command)) {
     preCommand = str2lang(gsub(":", ",", gsub("\\(all,", "all(", gsub('>==','>=',gsub('<==','<=',gsub('\\b=\\b','==',s$command))))))
