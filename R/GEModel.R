@@ -23,7 +23,7 @@ GEModel = setRefClass(
     variableValues = 'list'
   ),
   methods = list(
-    # Loads a tablo without any data (only produces generic functions to genrate coefficients/equation coefficients etc.)
+    # Loads a tablo without any data (only produces generic functions to generate coefficients/equation coefficients etc.)
     loadTablo = function(tabloPath) {
       results = processTablo(tabloPath)
       skeletonGenerator <<- results$skeletonGenerator

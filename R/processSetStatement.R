@@ -39,7 +39,7 @@ processSetStatement = function(s) {
     command = sub("\\(", "\\|", s$command)
     command = gsub('\\)', '', command)
     command = unlist(strsplit(command, "\\|"))
-    temp_elements = unlist(strsplit(command[2], ', '))
+    temp_elements = trimws(unlist(strsplit(command[2], ',')))
     command[3] = paste0('Reduce(union,list(', paste0('\"', temp_elements, '\"', collapse = ','), '))') #Using lists to work with 2+ elements
     toRet = paste0(command[1], "=", command[3])
   }
