@@ -47,7 +47,7 @@ class(txt)
 # Read the model
 
 model = tabloToR::GEModel$new()
-
+tablo <- here::here("data/TablotoR/gtap.tab")
 model$loadTablo(here::here("data/TablotoR/gtap.tab"))
 
 # Read the databases
@@ -57,6 +57,13 @@ data = list(
   gtapparm = HARr::read_har(here::here("data/TablotoR/default.prm")),
   gtapdata = HARr::read_har(here::here("data/TablotoR/basedata.har"))
 )
+
+statements = tabloToStatements(tablo) # OK
+generator <- generateSkeleton(Filter(
+  function(f)
+    f$class %in% c('set', 'coefficient', 'read', 'formula'),
+  statements
+))
 
 model$loadData(data)
 
