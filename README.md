@@ -19,8 +19,11 @@ model$loadTablo('gtap.tab')
 
 # You need to get the data files .har
 data = list(
+  # The file with GTAP sets may alternatively be called sets.har by some data aggregation programs
   gtapsets = HARr::read_har('gsdgset.har'),
+  # The file with GTAP parameters may alternatively be called default.prm by some data aggregation programs
   gtapparm = HARr::read_har('gsdgpar.har'),
+  # The file with GTAPdata may alternatively be called basedata.har by some data aggregation programs
   gtapdata = HARr::read_har('gsdgdat.har')
 )
 
