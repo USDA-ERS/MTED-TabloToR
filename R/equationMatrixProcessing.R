@@ -31,8 +31,6 @@ generateEquationCoefficientMatrix = function(variableStatements, equationStateme
                      )), collapse = ','))
     }
 
-
-
     for (qualifier in c(qualifiers)) {
       q = str2lang(qualifier)
       expr = sprintf(#'for(%s in %s){%s}',
@@ -45,7 +43,7 @@ generateEquationCoefficientMatrix = function(variableStatements, equationStateme
       toRet[[length(toRet) + 1]] = sprintf('equations = c(equations,%s)' , expr)
 
     } else{
-      toRet[[length(toRet) + 1]] = sprintf('equations = c(equations,unlist(do.call(c,%s)))' , expr)
+      toRet[[length(toRet) + 1]] = sprintf('equations = c(equations,unlist(do.call(base:::c,%s)))' , expr)
 
     }
   }
@@ -62,13 +60,26 @@ generateEquationCoefficientMatrix = function(variableStatements, equationStateme
 
     if (length(variableDefinition) == 1) {
       variableName = deparse1(variableDefinition)
+      variableIndices = NULL
     } else {
       variableName = deparse1(variableDefinition[[2]])
+      
+      variableIndices= c()
+      for (i in 3:length(variableDefinition)){
+        variableIndices = c(variableIndices, variableDefinition[[i]])
+      }
+      
+      qualifiers_named <- c()
+      for (q in c(qualifiers)) {
+        name <- as.character(str2lang(q)[[2]])
+        qualifiers_named[name] = q
+      }
+      qualifiers = qualifiers_named[order(match(unlist(variableIndices), names(qualifiers_named)))]
     }
+
     variableIndices = Map(function(f)
       str2lang(f)[[2]], qualifiers)
-
-
+    
     if (length(variableIndices) > 0) {
       expr = sprintf(
         "sprintf('%s[%s]',%s)",
@@ -86,6 +97,7 @@ generateEquationCoefficientMatrix = function(variableStatements, equationStateme
                      )), collapse = ','))
     }
 
+    
     for (qualifier in c(qualifiers)) {
       q = str2lang(qualifier)
       expr = sprintf(#        'for(%s in %s){%s}',
@@ -99,7 +111,7 @@ generateEquationCoefficientMatrix = function(variableStatements, equationStateme
       toRet[[length(toRet) + 1]] = sprintf('variables = c(variables,%s)' , expr)
 
     } else{
-      toRet[[length(toRet) + 1]] = sprintf('variables = c(variables,unlist(do.call(c,%s)))' , expr)
+      toRet[[length(toRet) + 1]] = sprintf('variables = c(variables,unlist(do.call(base:::c,%s)))' , expr)
 
     }
   }

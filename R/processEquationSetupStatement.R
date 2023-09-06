@@ -1,46 +1,51 @@
-processEquationSetupStatement = function(s) {
-  dimensions = s$parsed$elements[grep('\\(all,', s$parsed$elements)]
-  equationName = s$parsed$equationName
+processEquationSetupStatement <- function(s) {
+  dimensions <- s$parsed$elements[grep("\\(all,", s$parsed$elements)]
+  equationName <- s$parsed$equationName
 
   if (length(dimensions) == 0) {
-    #toRet[[s$parsed$equation]] = NA
-    return(sprintf('%s=NA', equationName))
+    # toRet[[s$parsed$equation]] = NA
+    return(sprintf("%s=NA", equationName))
   } else {
-    qualifiers = gsub('<>', '!=', gsub(':', ",", gsub(
-      '=', '==', gsub('\\(all,', 'all(', dimensions)
+    qualifiers <- gsub("<>", "!=", gsub(":", ",", gsub(
+      "=", "==", gsub("\\(all,", "all(", dimensions)
     )))
 
-    dn = list()
+    dn <- list()
     for (q in qualifiers) {
-      dn[[str2lang(q)[[2]]]] = str2lang(q)[[3]]
+      dn[[str2lang(q)[[2]]]] <- str2lang(q)[[3]]
     }
 
-    equationIndices = paste(Map(function(f)
-      str2lang(f)[[2]], qualifiers), collapse = ',')
+    equationIndices <- paste(Map(function(f) {
+      str2lang(f)[[2]]
+    }, qualifiers), collapse = ",")
     if (is.null(equationIndices)) {
-      equationIndices = ''
+      equationIndices <- ""
     }
 
 
 
     return(
       sprintf(
-        '%s = array(NA, dim = c(%s), dimnames = list(%s))',
+        "%s = array(NA, dim = c(%s), dimnames = list(%s))",
         equationName,
         paste(
-          'length(',
-          unlist(Map(function(f)
-            deparse1(f), dn)),
-          ')',
-          sep = '',
-          collapse = ','
+          "length(",
+          unlist(Map(function(f) {
+            deparse1(f)
+          }, dn)),
+          ")",
+          sep = "",
+          collapse = ","
         ),
         paste(
-          Map(function(f)
-            sprintf('%s=%s', deparse1(f), deparse(f)),
-            dn),
-          sep = '',
-          collapse = ','
+          Map(
+            function(f) {
+              sprintf("%s=%s", deparse1(f), deparse(f))
+            },
+            dn
+          ),
+          sep = "",
+          collapse = ","
         )
       )
     )

@@ -6,83 +6,90 @@
 #   solve the model (for the given coefficients)
 #   update data (execute all updates/formulas always)
 
-GEModel = setRefClass(
+GEModel <- setRefClass(
   "GEModel",
   fields = list(
     shocks = "numeric",
-    skeletonGenerator = 'function',
-    equationCoefficientMatrixGenerator = 'function',
-    equationCoefficientGenerator = 'function',
-    generateVariables = 'function',
-    generateUpdates = 'function',
-    data = 'list',
-    solution = 'numeric',
-    changeVariables = 'character',
-    variables = 'character',
-    basicChangeVariables = 'character',
-    variableValues = 'list'
+    skeletonGenerator = "function",
+    skeletonGeneratorPostsim = "function",
+    equationCoefficientMatrixGenerator = "function",
+    equationCoefficientGenerator = "function",
+    generateVariables = "function",
+    generateUpdates = "function",
+    data  = "list",
+    outputData  = "list",
+    solution = "numeric",
+    changeVariables = "character",
+    variables = "character",
+    basicChangeVariables = "character",
+    variableValues = "list"
   ),
   methods = list(
     # Loads a tablo without any data (only produces generic functions to generate coefficients/equation coefficients etc.)
     loadTablo = function(tabloPath) {
-      results = processTablo(tabloPath)
+      results <- processTablo(tabloPath)
       skeletonGenerator <<- results$skeletonGenerator
+      skeletonGeneratorPostsim <<- results$skeletonGeneratorPostsim
       equationCoefficientMatrixGenerator <<-
         results$equationCoefficientMatrixGenerator
       equationCoefficientGenerator <<- results$equationCoefficientGenerator
       generateVariables <<- results$generateVariables
       generateUpdates <<- results$generateUpdates
-      if(!is.null(results$changeVariables)){
-      basicChangeVariables <<- results$changeVariables
+      if (!is.null(results$changeVariables)) {
+        basicChangeVariables <<- results$changeVariables
       }
       variables <<- results$variables
     },
     loadData = function(inputData) {
-      #browser()
+      # browser()
       data <<- skeletonGenerator(inputData)
       data <<- equationCoefficientMatrixGenerator(data)
       data <<- generateVariables(data)
       variableValues <<- data[variables]
-      changeVariables <<- data$variables[substr(data$variables,1,regexpr('\\[',data$variables)-1) %in% basicChangeVariables]
+      changeVariables <<- data$variables[substr(data$variables, 1, regexpr("\\[", data$variables) - 1) %in% basicChangeVariables]
     },
     setShocks = function(shocks) {
       shocks <<- shocks
     },
-    generateSolution = function(subShocks){
-      #browser()
-      iNames = unlist(Map(function(i)
-        i$equation, data$equationMatrixList))
-      iNumbers = data$equationNumbers[iNames]
-      jNames = unlist(Map(function(i)
-        i$variable, data$equationMatrixList))
-      jNumbers = data$variableNumbers[jNames]
+    generateSolution = function(subShocks) {
+      # browser()
+      iNames <- unlist(Map(function(i) {
+        i$equation
+      }, data$equationMatrixList))
+      iNumbers <- data$equationNumbers[iNames]
+      jNames <- unlist(Map(function(i) {
+        i$variable
+      }, data$equationMatrixList))
+      jNumbers <- data$variableNumbers[jNames]
 
       tictoc::tic()
-      xValues = unlist(Map(
-        function(i)
-          i$expression,
+      xValues <- unlist(Map(
+        function(i) {
+          i$expression
+        },
         data$equationMatrixList
       ))
 
-      names(xValues) = unlist(Map(
-        function(i)
-          i$variable,
+      names(xValues) <- unlist(Map(
+        function(i) {
+          i$variable
+        },
         data$equationMatrixList
       ))
 
-      #pctChanges = setdiff(names(xValues),changeVariables)
-      #toChange = which(names(xValues) %in% relChangeVariables)
+      # pctChanges = setdiff(names(xValues),changeVariables)
+      # toChange = which(names(xValues) %in% relChangeVariables)
 
-      #browser()
+      # browser()
 
-      #xValues[pctChanges] = xValues[pctChanges] * 0.01
-      #xValues2[relChangeVariables] = xValues2[relChangeVariables] * 0.01
+      # xValues[pctChanges] = xValues[pctChanges] * 0.01
+      # xValues2[relChangeVariables] = xValues2[relChangeVariables] * 0.01
 
       tictoc::toc()
 
-      #browser()
+      # browser()
 
-      data$eqcoeff = sparseMatrix(
+      data$eqcoeff <<- sparseMatrix(
         i = iNumbers,
         j = jNumbers,
         x = xValues,
@@ -94,11 +101,11 @@ GEModel = setRefClass(
       )
 
 
-      bigMatrix = data$eqcoeff[, setdiff(colnames(data$eqcoeff), names(shocks)), drop = FALSE]
+      bigMatrix <- data$eqcoeff[, setdiff(colnames(data$eqcoeff), names(shocks)), drop = FALSE]
 
-      #browser()
+      # browser()
 
-      smallMatrix = data$eqcoeff[, names(shocks), drop  = FALSE]
+      smallMatrix <- data$eqcoeff[, names(shocks), drop = FALSE]
 
       # ### Do backsolving first
       # bigMatrix2 = as(bigMatrix, 'TsparseMatrix')
@@ -113,7 +120,7 @@ GEModel = setRefClass(
       # backSolveMatrixRight = bigMatrix[removeI+1,removeJ+1, drop = FALSE]
       # bigMatrixReduced=bigMatrix[keepI,keepJ, drop = FALSE]
 
-      exoVector=-smallMatrix %*% subShocks
+      exoVector <- -smallMatrix %*% subShocks
 
       # exoVectorReduced = exoVector[keepI,,drop=FALSE]
       #
@@ -127,26 +134,25 @@ GEModel = setRefClass(
       #
       # iterationSolution =c(solutionExtra,solutionReduced) [colnames(bigMatrix)]
 
-      iterationSolution=SparseM::solve(bigMatrix,exoVector,sparse=T,tol=1e-40)
+      iterationSolution <- SparseM::solve(bigMatrix, exoVector, sparse = T, tol = 1e-40)
 
       return(iterationSolution)
     },
-    solveModel = function(iter = 3, steps = c(1,3)) {
-
+    solveModel = function(iter = 3, steps = c(1, 3)) {
       # Create a shock variable
 
-      #browser()
+      # browser()
 
-      shocks <<- do.call(c,unname(Map(function(f){
-        toVector(variableValues[[f]],f)
+      shocks <<- do.call(c, unname(Map(function(f) {
+        toVector(variableValues[[f]], f)
       }, names(variableValues))))
 
-      shocks<<-shocks[!is.na(shocks)]
+      shocks <<- shocks[!is.na(shocks)]
 
-      #browser()
+      # browser()
 
       # shocks for change variables are not compounded
-      #subShocks = shocks/iter
+      # subShocks = shocks/iter
 
       # # list of relevant change variables in shocks
       # pctChangeShocks = setdiff(names(subShocks), changeVariables)
@@ -155,34 +161,33 @@ GEModel = setRefClass(
       # subShocks[pctChangeShocks] = (exp(log(1+shocks[pctChangeShocks]/100)/iter)-1)*100
 
 
-      #names(subShocks)=names(shocks)
+      # names(subShocks)=names(shocks)
 
       solution <<- as.numeric(c())
 
-      iterationSolution = list()
+      iterationSolution <- list()
 
-      appliedShocks = shocks
-      appliedShocks[] = 0
+      appliedShocks <- shocks
+      appliedShocks[] <- 0
 
       # Go through each iteration (subinterval)
       for (it in 1:iter) {
-        message(sprintf('Iteration %s/%s', it, iter))
+        message(sprintf("Iteration %s/%s", it, iter))
 
-        remainingShocks = ((1+shocks/100)/(1+appliedShocks/100)-1)*100
-        subShocks = remainingShocks/(iter-it+1)
+        remainingShocks <- ((1 + shocks / 100) / (1 + appliedShocks / 100) - 1) * 100
+        subShocks <- remainingShocks / (iter - it + 1)
 
-        appliedShocks = ((1+ appliedShocks/100) * (1+subShocks/100)-1)*100
+        appliedShocks <- ((1 + appliedShocks / 100) * (1 + subShocks / 100) - 1) * 100
 
         # Within each iteration (subinterval) do steps
 
         # Save the state of the model
-        originalData = data
+        originalData <- data
 
-        stepSolution = list()
+        stepSolution <- list()
 
-        for(step in 1:length(steps)){
-
-          message(sprintf('Step set %s/%s', step,length(steps)))
+        for (step in 1:length(steps)) {
+          message(sprintf("Step set %s/%s", step, length(steps)))
 
           # In each step set start from the original state of data
           data <<- originalData
@@ -191,80 +196,70 @@ GEModel = setRefClass(
           # stepShocks = subShocks/steps[step]
 
           # .... step shocks are compunded
-          #stepShocks[pctChangeShocks] =  (exp(log(1+subShocks[pctChangeShocks]/100)/steps[step])-1)*100
+          # stepShocks[pctChangeShocks] =  (exp(log(1+subShocks[pctChangeShocks]/100)/steps[step])-1)*100
 
-          subStepSolution=list()
+          subStepSolution <- list()
 
-          appliedSubShocks = subShocks
-          appliedSubShocks[] = 0
+          appliedSubShocks <- subShocks
+          appliedSubShocks[] <- 0
 
 
-          for(currentStep in 1:steps[step]){
+          for (currentStep in 1:steps[step]) {
+            remainingSubShocks <- ((1 + subShocks / 100) / (1 + appliedSubShocks / 100) - 1) * 100
 
-            remainingSubShocks = ((1+subShocks/100)/(1+appliedSubShocks/100)-1)*100
+            stepShocks <- remainingSubShocks / (steps[step] - currentStep + 1)
 
-            stepShocks = remainingSubShocks/(steps[step]-currentStep+1)
-
-            appliedSubShocks = ((1+ appliedSubShocks/100) * (1+stepShocks/100)-1)*100
+            appliedSubShocks <- ((1 + appliedSubShocks / 100) * (1 + stepShocks / 100) - 1) * 100
 
 
             data <<- equationCoefficientGenerator(data)
-            message(sprintf('Step %s/%s', currentStep,steps[step]))
-            #browser()
+            message(sprintf("Step %s/%s", currentStep, steps[step]))
+            # browser()
             # Solve the model for this shock
-            subStepSolution[[currentStep]] = generateSolution(stepShocks)
+            subStepSolution[[currentStep]] <- generateSolution(stepShocks)
 
             # Update the variables
-            data <<- within(data,{
-              eval(parse(text=sprintf("%s=%s;", names(subStepSolution[[currentStep]]), subStepSolution[[currentStep]][names(subStepSolution[[currentStep]])])))
+            data <<- within(data, {
+              eval(parse(text = sprintf("%s=%s;", names(subStepSolution[[currentStep]]), subStepSolution[[currentStep]][names(subStepSolution[[currentStep]])])))
             })
 
             # Update the shocked variables
-            data <<- within(data,{
-              eval(parse(text=sprintf("%s=%s;", names(stepShocks), stepShocks[names(stepShocks)])))
+            data <<- within(data, {
+              eval(parse(text = sprintf("%s=%s;", names(stepShocks), stepShocks[names(stepShocks)])))
             })
 
             # Update the data
             data <<- generateUpdates(data)
-
           }
-          #browser()
+          # browser()
 
 
-          stepSolution[[step]] = rowSums(do.call(cbind,subStepSolution))
+          stepSolution[[step]] <- rowSums(do.call(cbind, subStepSolution))
 
-          solutionPctChangeVariables = setdiff(names(stepSolution[[step]]), changeVariables)
+          solutionPctChangeVariables <- setdiff(names(stepSolution[[step]]), changeVariables)
 
-          stepSolution[[step]][solutionPctChangeVariables] = ((apply(do.call(cbind,subStepSolution)/100+1, MARGIN=1, FUN = prod)-1)*100)[solutionPctChangeVariables]
-          #browser()
+          stepSolution[[step]][solutionPctChangeVariables] <- ((apply(do.call(cbind, subStepSolution) / 100 + 1, MARGIN = 1, FUN = prod) - 1) * 100)[solutionPctChangeVariables]
+          # browser()
           # If any step <-100 we have to treat it as a change variable (like GEMPACK)
           # sols = apply(do.call(cbind,subStepSolution)<=-100,MARGIN = 1, any)
           #
           # solutionPctChangeVariables=setdiff(solutionPctChangeVariables, names(sols[sols]))
 
-          #stepSolution[[step]][solutionPctChangeVariables] = (exp(rowSums(log(1+do.call(cbind,subStepSolution)[solutionPctChangeVariables,, drop = FALSE]/100)))-1)*100
+          # stepSolution[[step]][solutionPctChangeVariables] = (exp(rowSums(log(1+do.call(cbind,subStepSolution)[solutionPctChangeVariables,, drop = FALSE]/100)))-1)*100
         }
 
-        #browser()
+        # browser()
 
-        if(length(steps)==1){
-
+        if (length(steps) == 1) {
           # We only have one set of steps--this is the solution
-          iterationSolution[[it]] = stepSolution[[1]]
-
-        } else if(length(steps)==2) {
-
+          iterationSolution[[it]] <- stepSolution[[1]]
+        } else if (length(steps) == 2) {
           # We have two sets of steps and so we can extrapolate
-          #browser()
-          iterationSolution[[it]] = colSums(t(do.call(cbind,stepSolution)) * (steps[c(1,2)] * c(1,-1))) / (steps[1]-steps[2])
-
-
-
-        } else if(length(steps)==3) {
-
+          # browser()
+          iterationSolution[[it]] <- colSums(t(do.call(cbind, stepSolution)) * (steps[c(1, 2)] * c(1, -1))) / (steps[1] - steps[2])
+        } else if (length(steps) == 3) {
           # We have three sets of steps and so we can extrapolate and provide accuracy
-          iterationSolution[[it]] = colSums(t(do.call(cbind,stepSolution)) * (steps[c(2,3)] * c(1,-1))) / (steps[2]-steps[3])
-
+          iterationSolution[[it]] <- colSums(t(do.call(cbind, stepSolution)) * (steps[c(2, 3)] * c(1, -1))) / (steps[2] - steps[3])
         }
 
         # tictoc::tic()
@@ -283,52 +278,56 @@ GEModel = setRefClass(
         #   solution<<-intermediateSolution
         # }
 
-        #browser()
+        # browser()
 
-        data <<-originalData
+        data <<- originalData
 
         tictoc::tic()
-        data <<- within(data,{
-          eval(parse(text=sprintf("%s=%s;", names(iterationSolution[[it]]), iterationSolution[[it]][names(iterationSolution[[it]])])))
+        data <<- within(data, {
+          eval(parse(text = sprintf("%s=%s;", names(iterationSolution[[it]]), iterationSolution[[it]][names(iterationSolution[[it]])])))
         })
         tictoc::toc()
 
 
         tictoc::tic()
-        data <<- within(data,{
-          eval(parse(text=sprintf("%s=%s;", names(shocks), subShocks[names(shocks)])))
+        data <<- within(data, {
+          eval(parse(text = sprintf("%s=%s;", names(shocks), subShocks[names(shocks)])))
         })
         tictoc::toc()
 
-        #browser()
+        # browser()
         data <<- generateUpdates(data)
       }
 
-      #browser()
+      # browser()
 
-      if(length(iterationSolution)==1){
+      if (length(iterationSolution) == 1) {
         solution <<- iterationSolution[[1]]
       } else {
-        solution <<- rowSums(do.call(cbind,iterationSolution))
-        solutionPctChangeVariables = setdiff(names(solution), changeVariables)
-        solution[solutionPctChangeVariables] <<- ((apply(1+do.call(cbind,iterationSolution)/100, MARGIN = 1, FUN = prod)-1)*100)[solutionPctChangeVariables]
+        solution <<- rowSums(do.call(cbind, iterationSolution))
+        solutionPctChangeVariables <- setdiff(names(solution), changeVariables)
+        solution[solutionPctChangeVariables] <<- ((apply(1 + do.call(cbind, iterationSolution) / 100, MARGIN = 1, FUN = prod) - 1) * 100)[solutionPctChangeVariables]
       }
 
-      #solution[solutionPctChangeVariables]<<- (exp(rowSums(log(1+do.call(cbind,iterationSolution)[solutionPctChangeVariables,, drop = FALSE]/100)))-1)*100
+      # solution[solutionPctChangeVariables]<<- (exp(rowSums(log(1+do.call(cbind,iterationSolution)[solutionPctChangeVariables,, drop = FALSE]/100)))-1)*100
 
       tictoc::tic()
-      data <<- within(data,{
-        eval(parse(text=sprintf("%s=%s;", names(solution), solution[names(solution)])))
+      data <<- within(data, {
+        eval(parse(text = sprintf("%s=%s;", names(solution), solution[names(solution)])))
       })
       tictoc::toc()
 
       tictoc::tic()
-      data <<- within(data,{
-        eval(parse(text=sprintf("%s=%s;", names(shocks), shocks[names(shocks)])))
+      data <<- within(data, {
+        eval(parse(text = sprintf("%s=%s;", names(shocks), shocks[names(shocks)])))
       })
 
       tictoc::toc()
 
+      dataPostsim <- c(data, inputData$gtapdata)
+      dataPostsim <- skeletonGeneratorPostsim(dataPostsim)
+      dataPostsim <- dataPostsim[!names(dataPostsim) %in% names(inputData$gtapdata)]
+      outputData <<- dataPostsim
     }
   )
 )

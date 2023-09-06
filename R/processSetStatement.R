@@ -51,7 +51,7 @@ processSetStatement = function(s) {
                    "paste0(",
                    "expand.grid(s1=", command[[3]][[2]], ", s2=", command[[3]][[3]], ")$s1, ",
                    '"_", ',
-                   "expand.grid(s1=", command[[3]][[2]], ", s2=", command[[3]][[2]], ")$s2)")
+                   "expand.grid(s1=", command[[3]][[2]], ", s2=", command[[3]][[3]], ")$s2)")
   }
   # SET FORMULA
   else if (grepl(".* = \\(all,.*,.*\\)", s$command)) {
@@ -61,7 +61,7 @@ processSetStatement = function(s) {
     standIn = deparse1(preCommand[[3]][[2]])
     preCommand[[3]][[4]] = str2lang(gsub(
       paste0('\\b', standIn, '\\b'),
-      setName ,
+      setName,
       deparse1(preCommand[[3]][[4]])
     ))
 
@@ -89,4 +89,15 @@ processSetStatement = function(s) {
   }
 
   return(toRet)
+}
+
+
+processmappingStatement = function(s) {
+  # SET READ
+  if (grepl(".* from .* to .*",
+            s$command)) {
+    words = strsplit(s$command, " ")[[1]]
+    #toRet[[words[1]]] = files[[words[9]]][[gsub("\"", "", words[11])]]
+    toRet = sprintf('%s=%s', words[[1]], words[[5]])
+  }
 }

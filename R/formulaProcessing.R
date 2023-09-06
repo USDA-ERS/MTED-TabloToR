@@ -1,47 +1,45 @@
-sumToMap = function(expr) {
-    if (class(expr) == 'name') {
+sumToMap <- function(expr) {
+  if (class(expr) == "name") {
     return(expr)
   }
 
-  if (expr[[1]] == 'sum') {
-    index = expr[[2]]
-    set = expr[[3]]
-    expression = expr[[4]]
+  if (expr[[1]] == "sum") {
+    index <- expr[[2]]
+    set <- expr[[3]]
+    expression <- expr[[4]]
 
-    expr[[2]] = str2lang('unlist()')
-    expr[[4]] = NULL
-    expr[[3]] = NULL
-    expr[[2]][[2]] = str2lang(sprintf(
-      'Map(function(%s)%s,%s)',
+    expr[[2]] <- str2lang("unlist()")
+    expr[[4]] <- NULL
+    expr[[3]] <- NULL
+    expr[[2]][[2]] <- str2lang(sprintf(
+      "Map(function(%s)%s,%s)",
       deparse1(index),
-      paste0(deparse1(sumToMap(expression)),collapse=' '),
+      paste0(deparse1(sumToMap(expression)), collapse = " "),
       deparse1(set)
     ))
-
-  }else  if (length(expr) > 1) {
+  } else if (length(expr) > 1) {
     for (i in 2:length(expr)) {
-      expr[[i]] = sumToMap(expr[[i]])
+      expr[[i]] <- sumToMap(expr[[i]])
     }
-
   }
   return(expr)
 }
 
 
 
-generateFormulas = function(formulaStatements) {
-  toRet = list()
+generateFormulas <- function(formulaStatements) {
+  toRet <- list()
   for (s in formulaStatements) {
-        toRet[[length(toRet) + 1]] = processFormulaStatement(s)
+    toRet[[length(toRet) + 1]] <- processFormulaStatement(s)
   }
 
-  f = str2lang('function(data)return(data)')
-  w = str2lang('within(data,{})')
+  f <- str2lang("function(data)return(data)")
+  w <- str2lang("within(data,{})")
   for (tr in toRet) {
-    w[[3]][[length(w[[3]]) + 1]] = sumToMap(str2lang(tr))
+    w[[3]][[length(w[[3]]) + 1]] <- sumToMap(str2lang(tr))
   }
 
-  f[[3]][[2]] = w
+  f[[3]][[2]] <- w
 
   return(eval(f))
 }
