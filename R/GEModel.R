@@ -17,7 +17,7 @@ GEModel <- setRefClass(
     generateVariables = "function",
     generateUpdates = "function",
     data  = "list",
-    outputData  = "list",
+    #outputData  = "list",
     solution = "numeric",
     changeVariables = "character",
     variables = "character",
