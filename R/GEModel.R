@@ -329,7 +329,7 @@ GEModel <- setRefClass(
 
       tictoc::toc()
 
-      dataPostsimIn <- c(data, inputData$gtapdata)
+      dataPostsimIn <- c(data, originalData$gtapdata) 
       dataPostsimOut <- skeletonGeneratorPostsim(dataPostsimIn)
       dataPostsimOut <- dataPostsimOut[!names(dataPostsimOut) %in% names(dataPostsimIn)]
       dataPostsimOut <- c(data, dataPostsimOut)
