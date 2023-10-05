@@ -64,12 +64,14 @@ generateEquationCoefficients <- function(equationStatements) {
 
     variables <- unlistVarCoef(getVarCoef(frm))
 
+    
     for (v in 1:length(variables)) {
       if (length(variables[[v]]$variable) == 1) {
         variables[[v]]$indices <- list()
         variables[[v]]$varname <- variables[[v]]$variable
       } else {
         variables[[v]]$indices <- as.list(variables[[v]]$variable[3:length(variables[[v]]$variable)])
+        variables[[v]]$indices <- lapply(variables[[v]]$indices, deparse)
         variables[[v]]$varname <- variables[[v]]$variable[[2]]
       }
       variables[[v]]$qualifiers <- Map(

@@ -55,12 +55,15 @@ readFirstWord <- function(statement) {
     firstWord <- "coefficient"
   } else if (grepl("^update", statement, ignore.case = TRUE)) {
     firstWord <- "update"
-  } else if (grepl("^formula", statement, ignore.case = TRUE)) {
+  #} else if (grepl("^formula", statement, ignore.case = TRUE)) {
+  } else if (grepl("^formula(?!.*&)", statement, ignore.case = TRUE, perl = TRUE)) {
     firstWord <- "formula"
   } else if (grepl("^zerodivide", statement, ignore.case = TRUE)) {
     firstWord <- "zerodivide"
   } else if (grepl("^mapping", statement, ignore.case = TRUE)) {
     firstWord <- "mapping"
+   } else if (grepl("^formula.*&.*equation", statement, ignore.case = TRUE)) {
+     firstWord <- "formulaandequation"
   } else {
     firstWord <- ""
   }
@@ -68,7 +71,11 @@ readFirstWord <- function(statement) {
   return(list(firstWord = firstWord, rest = trimws(substr(statement, nchar(firstWord) + 1, nchar(statement)))))
 }
 
+
+
 readEquationName <- function(statement) {
+  
+  statement <- gsub("\\(levels\\)", "", statement)
   statement <- trimws(statement)
 
   findName <- gregexpr("^[a-z]{1,}[a-z0-9_]{1,}", statement, ignore.case = TRUE)[[1]]
@@ -264,10 +271,15 @@ generateParsedInput <- function(statement) {
   return(list(elements = elements, equation = equation))
 }
 
+
+
+
 generateParsedInputEquation <- function(statement) {
   # statement = "(all,i,IND)(all,o,OCC)x1lab[i,o] = x1lab_o[i] - SIGMA1LAB[i]*(p1lab[i,o] - p1lab_o[i])"
   # statement="Equation E_SalesDecompA(all,c,COM)(all,d,DEST) INITSALES(c)*SalesDecomp(c,d) = 100*delSale(c,\"dom\",d)"
 
+  statement <- gsub("\\bp_", "", statement)
+  
   # Find all valid elements
   # In equation, you can only specify (all,X,Y)
   foundElements <- gregexpr(
@@ -403,9 +415,27 @@ tabloToStatements <- function(tablo) {
     } else {
       temp <- generateParsedInput(f$command)
     }
+    
+    if (f$class == "variable") {
+      temp$equation <- gsub("\\bp_", "", temp$equation)
+    }
+    
+    
     f$parsed <- temp
     return(f)
   }, cleanLines)
+  
+  
+  # variableStatements <- 
+  #   Filter(function(f)
+  #     f$class == 'variable', cleanLinesParsed)
+  # 
+  # f = cleanLines[[1091]]
+  # f
+  # grep(tolower('p_'), variableStatements)
+  
+  
+  
 
   cleanLinesParsed <- postsimSplit(cleanLinesParsed)
 

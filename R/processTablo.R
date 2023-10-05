@@ -12,7 +12,8 @@ processTablo <- function(tablo) {
 
   generator <- generateSkeleton(Filter(
     function(f) {
-      f$class %in% c("set", "mapping", "coefficient", "read", "formula") &
+      f$class %in% c("set", "mapping", "coefficient", "variable", "read", "formula", "formulaandequation") &
+      #f$class %in% c("set", "mapping", "coefficient", "read", "formula") &
         f$postsim == F
     },
     statements
@@ -20,7 +21,7 @@ processTablo <- function(tablo) {
 
   generatorPostsim <- generateSkeleton(Filter(
     function(f) {
-      f$class %in% c("set", "mapping", "coefficient", "read") |
+      f$class %in% c("set", "mapping", "coefficient", "variable", "read", "formula") |
         f$postsim == T
     },
     statements
@@ -31,18 +32,19 @@ processTablo <- function(tablo) {
       f$class == "variable"
     }, statements),
     Filter(function(f) {
-      f$class == "equation"
+      f$class %in% c("equation")
     }, statements)
   )
   gec <- generateEquationCoefficients(Filter(function(f) {
-    f$class == "equation"
+    f$class %in% c("equation")
   }, statements))
 
   gev <- generateVariables(Filter(function(f) {
     f$class == "variable"
   }, statements))
   geq <- generateEquationLevels(Filter(function(f) {
-    f$class == "equation"
+    f$class  %in% c("equation", "formulaandequation")
+   # f$class == "equation"
   }, statements))
   gup <- generateUpdates(Filter(
     function(f) {

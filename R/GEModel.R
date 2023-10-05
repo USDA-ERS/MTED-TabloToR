@@ -171,6 +171,11 @@ GEModel <- setRefClass(
       appliedShocks[] <- 0
 
       # Go through each iteration (subinterval)
+      # iter=1
+      # it=1
+      # step=1
+      # steps = 1
+      # currentStep = 1
       for (it in 1:iter) {
         message(sprintf("Iteration %s/%s", it, iter))
 
@@ -324,10 +329,11 @@ GEModel <- setRefClass(
 
       tictoc::toc()
 
-      dataPostsim <- c(data, inputData$gtapdata)
-      dataPostsim <- skeletonGeneratorPostsim(dataPostsim)
-      dataPostsim <- dataPostsim[!names(dataPostsim) %in% names(inputData$gtapdata)]
-      outputData <<- dataPostsim
+      dataPostsimIn <- c(data, inputData$gtapdata)
+      dataPostsimOut <- skeletonGeneratorPostsim(dataPostsimIn)
+      dataPostsimOut <- dataPostsimOut[!names(dataPostsimOut) %in% names(dataPostsimIn)]
+      dataPostsimOut <- c(data, dataPostsimOut)
+      outputData <<- dataPostsimOut
     }
   )
 )

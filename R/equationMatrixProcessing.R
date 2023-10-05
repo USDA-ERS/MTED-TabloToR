@@ -1,3 +1,14 @@
+
+
+# variableStatements <- Filter(function(f) {
+#   f$class == "variable"
+# }, statements)
+# equationStatements <- Filter(function(f) {
+#   f$class %in% c("equation")
+# }, statements)
+# 
+
+
 generateEquationCoefficientMatrix = function(variableStatements, equationStatements) {
   toRet = list('equations=c()', 'variables=c()')
   for (s in equationStatements) {

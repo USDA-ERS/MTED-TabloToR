@@ -28,6 +28,7 @@ correctFormula <- function(formulaText) {
   }
 
   formulaText <- gsub("\\$pos", "match", formulaText)
+  formulaText <- gsub("^e_\\w+\\s*", "", formulaText)
 
   # formulaText = str2lang(gsub('\\]', ')', gsub('\\[', '(', deparse(gsub(":", "%:%", gsub("\\(all,", "all(", gsub('>==','>=',gsub('<==','<=',gsub('=','==',formulaText)))))))))
   formulaText <- str2lang(gsub("\\]", ")", gsub("\\[", "(", deparse1(formulaText))))
@@ -44,6 +45,9 @@ functionToData <- function(exp) {
     "exp",
     "loge",
     "match",
+    "normal",
+    "cumnormal",
+    "^",
     "=",
     "-",
     "+",
