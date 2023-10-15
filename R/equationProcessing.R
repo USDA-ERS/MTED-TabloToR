@@ -11,18 +11,17 @@ getVarCoef <- function(expr,
       coefficient = coefficient
     )
   } else if (expr[[1]] == "if") {
-      if (is.numeric(expr[[2]][[3]])){
-        coefficient = str2lang(sprintf("(if(%s){%s}else{0})", deparse1(expr[[2]]), deparse1(coefficient)))
-      }
-      if(length(expr[[4]]) < 3){
-      #ifStatement[[length(ifStatement) + 1]] <- list(filter = expr[[2]])
+    if (is.numeric(expr[[2]][[3]])) {
+      coefficient <- str2lang(sprintf("(if(%s){%s}else{0})", deparse1(expr[[2]]), deparse1(coefficient)))
+    }
+    if (length(expr[[4]]) < 3) {
+      # ifStatement[[length(ifStatement) + 1]] <- list(filter = expr[[2]])
       toRet[[length(toRet) + 1]] <- getVarCoef(expr[[3]], sets, ifStatement = expr[[2]], coefficient = coefficient)
-      # Criar aqui uma lista que carregue o filtro para aplicar como com %in% marg nos mappings
-      } else {
-        #ifStatement[[length(ifStatement) + 1]] <- list(filter = expr[[2]])
-        toRet[[length(toRet) + 1]] <- getVarCoef(expr[[3]], sets, ifStatement = expr[[2]], coefficient = coefficient)
-        toRet[[length(toRet) + 1]] <- getVarCoef(expr[[4]][[3]], sets, ifStatement, coefficient = coefficient)
-      }
+    } else {
+      # ifStatement[[length(ifStatement) + 1]] <- list(filter = expr[[2]])
+      toRet[[length(toRet) + 1]] <- getVarCoef(expr[[3]], sets, ifStatement = expr[[2]], coefficient = coefficient)
+      toRet[[length(toRet) + 1]] <- getVarCoef(expr[[4]][[3]], sets, ifStatement, coefficient = coefficient)
+    }
   } else if (expr[[1]] == "sum") {
     # If the top operator is sum: add to set/index
     sets[[length(sets) + 1]] <- list(index = expr[[2]], set = expr[[3]])
@@ -82,7 +81,7 @@ generateEquationCoefficients <- function(equationStatements) {
     frm <- correctFormula(s$parsed$equation)
 
     variables <- unlistVarCoef(getVarCoef(frm))
-    
+
     for (v in 1:length(variables)) {
       if (length(variables[[v]]$variable) == 1) {
         variables[[v]]$indices <- list()
@@ -142,15 +141,15 @@ generateEquationCoefficients <- function(equationStatements) {
       )
       for (qualifier in c(qualifiers, v$qualifiers)) {
         q <- str2lang(qualifier)
-        set = q[[3]]
-        
-        if (length(v$ifStatement)>0) { 
+        set <- q[[3]]
+
+        if (length(v$ifStatement) > 0) {
           if (q[[2]] == v$ifStatement[[2]]) {
-            v$ifStatement[[2]] = str2lang(deparse1(set))
-            set = str2lang(sprintf("%s[%s]", deparse1(set), deparse1(v$ifStatement)))
+            v$ifStatement[[2]] <- str2lang(deparse1(set))
+            set <- str2lang(sprintf("%s[%s]", deparse1(set), deparse1(v$ifStatement)))
           }
         }
-        
+
         expr <- sprintf(
           "unlist(Map(function(%s)%s,%s),recursive=F,use.names=F)",
           deparse1(q[[2]]),
@@ -177,33 +176,3 @@ generateEquationCoefficients <- function(equationStatements) {
 
   return(eval(f))
 }
-
-# v = variables[[4]]
-
-# qualifier = qualifiers[[1]]
-
-# qualifier = qualifiers[[1]]
-
-
-# q <- str2lang(qualifier)
-# if (length(v$ifStatement)>0) {
-#   if (q[[2]] == v$ifStatement[[1]]$filter[[2]]) {
-#   v$ifStatement[[1]]$filter[[2]] = str2lang(deparse1(q[[3]]))
-#   expr <- sprintf(
-#     "unlist(Map(function(%s)%s,%s),recursive=F,use.names=F)",
-#     deparse1(q[[2]]),
-#     expr,
-#     deparse1(v$ifStatement[[1]]$filter)
-#   )
-#   }
-#
-# }
-
-
-
-
-
-
-
-
-
