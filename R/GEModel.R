@@ -89,7 +89,7 @@ GEModel <- setRefClass(
 
       # browser()
 
-      data$eqcoeff <<- sparseMatrix(
+      data$eqcoeff <<- Matrix::sparseMatrix(
         i = iNumbers,
         j = jNumbers,
         x = xValues,
@@ -136,7 +136,7 @@ GEModel <- setRefClass(
 
       iterationSolution <- SparseM::solve(bigMatrix, exoVector, sparse = T, tol = 1e-40)
 
-      return(iterationSolution)
+      return(as.matrix(iterationSolution))
     },
     solveModel = function(iter = 3, steps = c(1, 3)) {
       # Create a shock variable
@@ -224,8 +224,12 @@ GEModel <- setRefClass(
             subStepSolution[[currentStep]] <- generateSolution(stepShocks)
 
             # Update the variables
-            data <<- within(data, {
-              eval(parse(text = sprintf("%s=%s;", names(subStepSolution[[currentStep]]), subStepSolution[[currentStep]][names(subStepSolution[[currentStep]])])))
+            # data <<- within(data, {
+            #   eval(parse(text = sprintf("%s=%s;", names(subStepSolution[[currentStep]]), subStepSolution[[currentStep]][names(subStepSolution[[currentStep]])])))
+            # })
+            
+            data <- within(data, {
+              eval(parse(text = sprintf("%s=%s;", rownames(subStepSolution[[currentStep]]), as.vector(subStepSolution[[currentStep]]))))
             })
 
             # Update the shocked variables
