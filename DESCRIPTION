@@ -10,4 +10,6 @@ License: What license is it under?
 Encoding: UTF-8
 LazyData: true
 Depends:
-    SparseM
+    R (>= 3.3.0),
+    Matrix,
+    SparseM (>= 1.81),
