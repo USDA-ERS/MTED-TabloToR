@@ -62,7 +62,7 @@ GEModel <- setRefClass(
       }, data$equationMatrixList))
       jNumbers <- data$variableNumbers[jNames]
 
-      tictoc::tic()
+      # tictoc::tic()
       xValues <- unlist(Map(
         function(i) {
           i$expression
@@ -85,7 +85,7 @@ GEModel <- setRefClass(
       # xValues[pctChanges] = xValues[pctChanges] * 0.01
       # xValues2[relChangeVariables] = xValues2[relChangeVariables] * 0.01
 
-      tictoc::toc()
+      # tictoc::toc()
 
       # browser()
 
@@ -228,7 +228,7 @@ GEModel <- setRefClass(
             #   eval(parse(text = sprintf("%s=%s;", names(subStepSolution[[currentStep]]), subStepSolution[[currentStep]][names(subStepSolution[[currentStep]])])))
             # })
             
-            data <- within(data, {
+            data <<- within(data, {
               eval(parse(text = sprintf("%s=%s;", rownames(subStepSolution[[currentStep]]), as.vector(subStepSolution[[currentStep]]))))
             })
 
@@ -291,18 +291,18 @@ GEModel <- setRefClass(
 
         data <<- originalData
 
-        tictoc::tic()
+        # tictoc::tic()
         data <<- within(data, {
           eval(parse(text = sprintf("%s=%s;", names(iterationSolution[[it]]), iterationSolution[[it]][names(iterationSolution[[it]])])))
         })
-        tictoc::toc()
+        # tictoc::toc()
 
 
-        tictoc::tic()
+        # tictoc::tic()
         data <<- within(data, {
           eval(parse(text = sprintf("%s=%s;", names(shocks), subShocks[names(shocks)])))
         })
-        tictoc::toc()
+        # tictoc::toc()
 
         # browser()
         data <<- generateUpdates(data)
@@ -320,18 +320,18 @@ GEModel <- setRefClass(
 
       # solution[solutionPctChangeVariables]<<- (exp(rowSums(log(1+do.call(cbind,iterationSolution)[solutionPctChangeVariables,, drop = FALSE]/100)))-1)*100
 
-      tictoc::tic()
+      # tictoc::tic()
       data <<- within(data, {
         eval(parse(text = sprintf("%s=%s;", names(solution), solution[names(solution)])))
       })
-      tictoc::toc()
+      # tictoc::toc()
 
-      tictoc::tic()
+      # tictoc::tic()
       data <<- within(data, {
         eval(parse(text = sprintf("%s=%s;", names(shocks), shocks[names(shocks)])))
       })
 
-      tictoc::toc()
+      # tictoc::toc()
 
       dataPostsimIn <- c(data, originalData$gtapdata) 
       dataPostsimOut <- skeletonGeneratorPostsim(dataPostsimIn)

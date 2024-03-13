@@ -1,1 +1,6 @@
 exportPattern("^[[:alpha:]]+")
+
+importFrom(SparseM, solve)
+importFrom(Matrix, sparseMatrix)
+
+
